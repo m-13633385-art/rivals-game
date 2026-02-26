@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rivals: Ranked Arena (Ultimate)</title>
+    <style>
+        :root {
+            --bg-color: #0b0b10;
+            --panel-bg: #161620;
+            --text-main: #e2e2e2;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --accent-gold: #fbbf24;
+            --btn-bg: #222230;
+            --btn-hover: #33334a;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        h1, h2 { text-align: center; text-transform: uppercase; letter-spacing: 2px;}
+        
+        /* Screens */
+        .screen { display: none; width: 100%; max-width: 900px; flex-direction: column; gap: 20px; }
+        
+        /* Fake Loading Screen */
+        #loading-screen { display: flex; justify-content: center; align-items: center; height: 80vh; flex-direction: column; }
+        .loader-box { width: 300px; background: #111; border: 2px solid var(--accent-blue); padding: 5px; border-radius: 8px; margin-top: 20px; }
+        .loader-fill { height: 20px; background: var(--accent-blue); width: 0%; transition: width 0.3s linear; border-radius: 4px; }
+        .terminal-text { font-family: 'Courier New', monospace; color: var(--accent-blue); margin-top: 10px; font-size: 14px; }
+
+        /* Profile & Shop UI */
+        #profile-card { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px; border-radius: 8px; border: 2px solid var(--accent-purple); text-align: center; box-shadow: 0 0 20px rgba(139, 92, 246, 0.2); }
+        #rank-title { font-size: 36px; font-weight: bold; margin: 5px 0; text-transform: uppercase; text-shadow: 2px 2px 4px #000; }
+        .stat-row { display: flex; justify-content: space-around; font-size: 16px; margin-top: 15px; color: #aaa; }
+        .credits-disp { color: var(--accent-gold); font-weight: bold; font-size: 20px; }
+        
+        /* Shop Grid */
+        #shop-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .shop-item { background: var(--panel-bg); padding: 15px; border: 1px solid #444; border-radius: 8px; text-align: center; }
+        .shop-item h3 { margin: 0 0 10px 0; color: var(--accent-gold); }
+        
+        /* Loadout UI */
+        .category-box { background: var(--panel-bg); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent-blue); }
+        select { width: 100%; padding: 10px; background: var(--btn-bg); color: white; border: 1px solid #444; border-radius: 4px; font-size: 16px; margin-top: 10px;}
+        .primary-btn { background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); color: white; border: none; padding: 15px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 8px; text-transform: uppercase; width: 100%; transition: 0.2s; margin-top: 10px; }
+        .primary-btn:hover { filter: brightness(1.2); transform: scale(1.02); }
+        .shop-btn { background: #2d2211; border: 1px solid var(--accent-gold); color: var(--accent-gold); }
+        .shop-btn:hover { background: #4a3617; }
+
+        /* Combat UI */
+        #hud-container { display: flex; justify-content: space-between; gap: 20px; }
+        .agent-panel { flex: 1; background: var(--panel-bg); padding: 20px; border-radius: 8px; position: relative; }
+        .player-panel { border-top: 4px solid var(--accent-blue); }
+        .enemy-panel { border-top: 4px solid var(--accent-red); }
+        .health-bar-container { width: 100%; background: #222; height: 25px; border-radius: 4px; margin: 10px 0; position: relative; }
+        .health-bar { height: 100%; transition: width 0.2s ease-out; }
+        #p-hp-bar { background: var(--accent-blue); width: 100%; }
+        #e-hp-bar { background: var(--accent-red); width: 100%; }
+        .hp-text { position: absolute; top: 2px; left: 10px; font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px black;}
+        #arena-status { text-align: center; font-size: 24px; font-weight: bold; padding: 15px; background: #111; border: 2px solid #333; border-radius: 8px; color: var(--accent-purple); letter-spacing: 3px;}
+        #log-box { background: #050508; border: 1px solid #333; height: 350px; padding: 15px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 14px; border-radius: 8px; }
+        .controls-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        button.action-btn { background: var(--btn-bg); color: var(--text-main); border: 1px solid #444; padding: 15px; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.2s; }
+        button.action-btn:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--accent-blue); }
+        button.action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .move-btn { background: #2d2d1a !important; border-color: #b8b829 !important; }
+        
+        /* Post Match & Killcam */
+        #killcam-box { background: #221; border: 2px dashed var(--accent-gold); padding: 15px; margin: 20px 0; border-radius: 8px; font-style: italic; font-size: 18px; color: #fff; }
+        .elo-change { font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .elo-up { color: var(--accent-green); }
+        .elo-down { color: var(--accent-red); }
+
+        /* Log Colors */
+        .log-p { color: var(--accent-blue); }
+        .log-e { color: var(--accent-red); }
+        .log-dmg { color: var(--accent-green); font-weight: bold;}
+        .log-crit { color: var(--accent-gold); font-weight: bold; text-transform: uppercase;}
+        .log-move { color: #a78bfa; font-style: italic;}
+    </style>
+</head>
+<body>
+
+<div id="loading-screen" class="screen" style="display: flex;">
+    <h1 style="color: var(--accent-blue); font-size: 40px; text-shadow: 0 0 10px var(--accent-blue);">RIVALS OS v2.0</h1>
+    <div class="loader-box">
+        <div id="load-bar" class="loader-fill"></div>
+    </div>
+    <div id="load-text" class="terminal-text">Establishing connection to arena servers...</div>
+</div>
+
+<div id="menu-screen" class="screen">
+    <div id="profile-card">
+        <div style="color: #888; font-size: 14px; text-transform: uppercase;">Current Rank</div>
+        <div id="rank-title">Bronze</div>
+        <div class="stat-row">
+            <div>Elo: <span id="stat-elo" style="color: white; font-weight: bold;">1000</span></div>
+            <div>W/L: <span id="stat-wins" style="color: var(--accent-green);">0</span> - <span id="stat-losses" style="color: var(--accent-red);">0</span></div>
+            <div class="credits-disp">💳 <span id="stat-credits">0</span> CR</div>
+        </div>
+    </div>
+
+    <div class="category-box">
+        <label><b>LOADOUT: PRIMARY WEAPON</b></label>
+        <select id="sel-primary">
+            <option value="Assault Rifle">Assault Rifle (Mid Range)</option>
+            <option value="Sniper">Sniper (Far Range)</option>
+            <option value="Shotgun">Shotgun (Close Range)</option>
+        </select>
+    </div>
+    <button class="primary-btn" onclick="startMatchmaking()">QUEUE FOR RANKED MATCH</button>
+    <button class="primary-btn shop-btn" onclick="switchScreen('shop-screen')">ENTER BLACK MARKET (SHOP)</button>
+</div>
+
+<div id="shop-screen" class="screen">
+    <h1>Black Market</h1>
+    <div style="text-align: center; margin-bottom: 20px;" class="credits-disp">Your Balance: 💳 <span id="shop-credits">0</span> CR</div>
+    
+    <div id="shop-grid">
+        <div class="shop-item">
+            <h3>"Neon Strike" AR</h3>
+            <p>Assault Rifle Skin</p>
+            <button class="primary-btn shop-btn" onclick="buySkin('Neon Strike', 200, 'Assault Rifle')">200 CR</button>
+        </div>
+        <div class="shop-item">
+            <h3>"Dragon Lore" Sniper</h3>
+            <p>Sniper Skin</p>
+            <button class="primary-btn shop-btn" onclick="buySkin('Dragon Lore', 500, 'Sniper')">500 CR</button>
+        </div>
+        <div class="shop-item">
+            <h3>"Blood Moon" Katana</h3>
+            <p>Melee Skin</p>
+            <button class="primary-btn shop-btn" onclick="buySkin('Blood Moon', 300, 'Katana')">300 CR</button>
+        </div>
+        <div class="shop-item">
+            <h3>"Golden Pump" Shotgun</h3>
+            <p>Shotgun Skin</p>
+            <button class="primary-btn shop-btn" onclick="buySkin('Golden Pump', 250, 'Shotgun')">250 CR</button>
+        </div>
+    </div>
+    <button class="primary-btn" onclick="switchScreen('menu-screen')">BACK TO LOBBY</button>
+</div>
+
+<div id="combat-screen" class="screen">
+    <div id="arena-status">DISTANCE: <span id="ui-range">MID RANGE</span></div>
+    
+    <div id="hud-container">
+        <div class="agent-panel player-panel">
+            <h2>YOU</h2>
+            <div class="health-bar-container"><div id="p-hp-bar"></div><div class="hp-text" id="p-hp-text">150 / 150</div></div>
+            <div style="font-size: 14px; color: #aaa;">Weapon: <span id="p-pri"></span></div>
+        </div>
+
+        <div class="agent-panel enemy-panel">
+            <h2>RIVAL (<span id="e-rank-disp"></span>)</h2>
+            <div class="health-bar-container"><div id="e-hp-bar"></div><div class="hp-text" id="e-hp-text">150 / 150</div></div>
+            <div style="font-size: 14px; color: #aaa;">Weapon: <span id="e-pri"></span></div>
+        </div>
+    </div>
+
+    <div id="log-box"></div>
+    
+    <div class="controls-grid">
+        <button class="action-btn" id="btn-pri" onclick="playerAction('primary')">Use Primary Gun</button>
+        <button class="action-btn" id="btn-mel" onclick="playerAction('melee')">Use Melee Strike</button>
+        <button class="action-btn move-btn" onclick="playerAction('dash-in')">► Dash Forward</button>
+        <button class="action-btn move-btn" onclick="playerAction('dash-out')">◄ Slide Back</button>
+    </div>
+</div>
+
+<div id="results-screen" class="screen">
+    <h1 id="res-title" style="text-align: center; margin-bottom: 0;">MATCH COMPLETE</h1>
+    
+    <div id="killcam-box">
+        <div style="color: var(--accent-gold); font-weight: bold; text-transform: uppercase; margin-bottom: 5px;">🎥 Play of the Game:</div>
+        <span id="killcam-text">Generating...</span>
+    </div>
+
+    <div id="profile-card">
+        <div style="font-size: 20px; color: #aaa;">Rating Update</div>
+        <div class="elo-change" id="res-elo-change">+0</div>
+        <div style="font-size: 24px;">New Elo: <span id="res-new-elo" style="font-weight: bold;">1000</span></div>
+        <div style="margin-top: 10px; font-size: 18px; color: var(--accent-gold);">Payout: +<span id="res-credits">0</span> CR</div>
+        <div id="res-rank-up" style="color: var(--accent-gold); font-size: 20px; font-weight: bold; margin-top: 15px; display: none;">🏆 PROMOTED TO NEW RANK!</div>
+    </div>
+    <button class="primary-btn" onclick="returnToMenu()">BACK TO LOBBY</button>
+</div>
+
+<script>
+    /* =========================================================================
+       SYSTEM / SAVES
+       ========================================================================= */
+    let playerData = {
+        elo: parseInt(localStorage.getItem('rv_elo')) || 1000,
+        wins: parseInt(localStorage.getItem('rv_wins')) || 0,
+        losses: parseInt(localStorage.getItem('rv_losses')) || 0,
+        credits: parseInt(localStorage.getItem('rv_credits')) || 0,
+        skins: JSON.parse(localStorage.getItem('rv_skins')) || {} // e.g., {"Sniper": "Dragon Lore"}
+    };
+
+    const ranks = [
+        { name: "Bronze", min: 0, color: "#cd7f32" }, { name: "Silver", min: 1200, color: "#c0c0c0" },
+        { name: "Gold", min: 1400, color: "#ffd700" }, { name: "Platinum", min: 1600, color: "#00ced1" },
+        { name: "Diamond", min: 1900, color: "#b9f2ff" }, { name: "Elite", min: 2200, color: "#ff1493" },
+        { name: "UNREAL", min: 2600, color: "#8a2be2" }
+    ];
+
+    function getRank(elo) { return ranks.slice().reverse().find(r => elo >= r.min) || ranks[0]; }
+
+    function saveStats() {
+        localStorage.setItem('rv_elo', playerData.elo);
+        localStorage.setItem('rv_wins', playerData.wins);
+        localStorage.setItem('rv_losses', playerData.losses);
+        localStorage.setItem('rv_credits', playerData.credits);
+        localStorage.setItem('rv_skins', JSON.stringify(playerData.skins));
+    }
+
+    /* =========================================================================
+       LOADING & UI LOGIC
+       ========================================================================= */
+    window.onload = () => {
+        // Fake Loading Sequence
+        let progress = 0;
+        let bar = document.getElementById("load-bar");
+        let text = document.getElementById("load-text");
+        
+        let loadInterval = setInterval(() => {
+            progress += Math.floor(Math.random() * 20) + 10;
+            if (progress > 30) text.innerText = "Syncing player profiles...";
+            if (progress > 70) text.innerText = "Calibrating hitboxes...";
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(loadInterval);
+                setTimeout(() => {
+                    updateMenuProfile();
+                    switchScreen('menu-screen');
+                }, 500);
+            }
+            bar.style.width = progress + "%";
+        }, 300);
+    };
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        document.getElementById(screenId).style.display = 'flex';
+        if(screenId === 'shop-screen') document.getElementById('shop-credits').innerText = playerData.credits;
+    }
+
+    function updateMenuProfile() {
+        const rank = getRank(playerData.elo);
+        const rankTitle = document.getElementById("rank-title");
+        rankTitle.innerText = rank.name;
+        rankTitle.style.color = rank.color;
+        document.getElementById("stat-elo").innerText = playerData.elo;
+        document.getElementById("stat-wins").innerText = playerData.wins;
+        document.getElementById("stat-losses").innerText = playerData.losses;
+        document.getElementById("stat-credits").innerText = playerData.credits;
+    }
+
+    function buySkin(skinName, cost, weaponClass) {
+        if (playerData.credits >= cost) {
+            playerData.credits -= cost;
+            playerData.skins[weaponClass] = skinName;
+            saveStats();
+            document.getElementById('shop-credits').innerText = playerData.credits;
+            alert(`Purchase successful! You equipped the [${skinName}] for your ${weaponClass}.`);
+        } else {
+            alert("Insufficient Credits. Win more matches!");
+        }
+    }
+
+    function getWeaponDisplay(wepName) {
+        return playerData.skins[wepName] ? `[${playerData.skins[wepName]}]` : wepName;
+    }
+
+    /* =========================================================================
+       COMBAT ENGINE
+       ========================================================================= */
+    const weapons = {
+        "Assault Rifle": { dmg: 24, acc: [0.6, 0.85, 0.5] },
+        "Sniper": { dmg: 80, acc: [0.2, 0.6, 0.95] },
+        "Shotgun": { dmg: 60, acc: [0.9, 0.2, 0.0] },
+        "Katana": { dmg: 40, acc: [0.9, 0.0, 0.0] } // Melee is fixed for simplicity
+    };
+
+    let p = { hp: 150, maxHp: 150, loadout: {} };
+    let e = { hp: 150, maxHp: 150, loadout: {} };
+    let currentRange = 1;
+    let isProcessing = false;
+    const rangeNames = ["CLOSE QUARTERS", "MID RANGE", "LONG RANGE"];
+    
+    // Killcam Tracker
+    let lastAction = { actor: "", weapon: "", range: "", crit: false };
+
+    function startMatchmaking() {
+        p.loadout.primary = document.getElementById("sel-primary").value;
+        p.loadout.melee = "Katana";
+        const pGuns = ["Assault Rifle", "Sniper", "Shotgun"];
+        e.loadout.primary = pGuns[Math.floor(Math.random() * pGuns.length)];
+        e.loadout.melee = "Katana";
+        p.hp = p.maxHp; e.hp = e.maxHp; currentRange = 1;
+
+        document.getElementById("p-pri").innerText = getWeaponDisplay(p.loadout.primary);
+        document.getElementById("e-pri").innerText = e.loadout.primary;
+        
+        let aiRank = getRank(playerData.elo);
+        document.getElementById("e-rank-disp").innerText = `${aiRank.name} Bot`;
+        document.getElementById("e-rank-disp").style.color = aiRank.color;
+
+        document.getElementById("log-box").innerHTML = "";
+        switchScreen('combat-screen');
+        updateHUD();
+        document.querySelectorAll(".action-btn").forEach(b => b.disabled = false);
+        isProcessing = false;
+    }
+
+    function updateHUD() {
+        document.getElementById("ui-range").innerText = rangeNames[currentRange];
+        document.getElementById("p-hp-bar").style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`;
+        document.getElementById("p-hp-text").innerText = `${Math.floor(Math.max(0, p.hp))} / ${p.maxHp}`;
+        document.getElementById("e-hp-bar").style.width = `${Math.max(0, (e.hp / e.maxHp) * 100)}%`;
+        document.getElementById("e-hp-text").innerText = `${Math.floor(Math.max(0, e.hp))} / ${e.maxHp}`;
+    }
+
+    function log(msg, style = "") {
+        const box = document.getElementById("log-box");
+        box.innerHTML += `<div class="${style}">> ${msg}</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function executeAction(actorName, action, actorObj, targetObj, logStyle) {
+        if (action === 'dash-in') {
+            currentRange = Math.max(0, currentRange - 1);
+            log(`[${actorName}] dashes forward! Distance: ${rangeNames[currentRange]}.`, logStyle);
+        } else if (action === 'dash-out') {
+            currentRange = Math.min(2, currentRange + 1);
+            log(`[${actorName}] slides backward! Distance: ${rangeNames[currentRange]}.`, logStyle);
+        } else {
+            let wepBase = actorObj.loadout[action];
+            let wepDisplay = actorName === "YOU" ? getWeaponDisplay(wepBase) : wepBase;
+            let acc = weapons[wepBase].acc[currentRange];
+
+            if (acc <= 0) { log(`[${actorName}] uses ${wepDisplay}, but target is out of range!`, logStyle); return; }
+
+            let isCrit = Math.random() < 0.15;
+            if (Math.random() <= (isCrit ? acc + 0.2 : acc)) {
+                let dmg = isCrit ? Math.floor(weapons[wepBase].dmg * 1.5) : weapons[wepBase].dmg;
+                targetObj.hp -= dmg;
+                log(`[${actorName}] fires ${wepDisplay}. <span class="log-dmg">Hits for ${dmg} DMG!</span> ${isCrit ? '<span class="log-crit">(CRIT!)</span>' : ''}`, logStyle);
+                
+                // Save for killcam
+                lastAction = { actor: actorName, weapon: wepDisplay, range: rangeNames[currentRange], crit: isCrit };
+            } else {
+                log(`[${actorName}] fires ${wepDisplay} but misses!`, logStyle);
+            }
+        }
+    }
+
+    function playerAction(action) {
+        if (isProcessing) return;
+        isProcessing = true;
+        log("<br>--- EXCHANGE ---", "log-move");
+        executeAction("YOU", action, p, e, "log-p");
+        updateHUD();
+        if (checkMatchEnd()) return;
+        setTimeout(() => { enemyTurn(); }, 800);
+    }
+
+    function enemyTurn() {
+        let action = "primary";
+        if (currentRange === 0) {
+            if (e.loadout.primary === "Sniper") action = "dash-out";
+            else action = Math.random() > 0.4 ? "melee" : "primary";
+        } else if (currentRange === 2) {
+            if (e.loadout.primary === "Shotgun") action = "dash-in";
+        }
+        executeAction("RIVAL", action, e, p, "log-e");
+        updateHUD();
+        checkMatchEnd();
+        isProcessing = false;
+    }
+
+    function checkMatchEnd() {
+        if (e.hp <= 0 || p.hp <= 0) {
+            document.querySelectorAll(".action-btn").forEach(b => b.disabled = true);
+            setTimeout(() => { resolveRanked(p.hp > 0); }, 1500);
+            return true;
+        }
+        return false;
+    }
+
+    /* =========================================================================
+       POST MATCH & KILLCAM
+       ========================================================================= */
+    function resolveRanked(playerWon) {
+        let oldRank = getRank(playerData.elo);
+        let eloChange = 0;
+        let creditEarned = 0;
+
+        // Generate Killcam
+        let camText = "";
+        let strikeText = lastAction.crit ? "a devastating HEADSHOT with their" : "a lethal strike using their";
+        if (playerWon) {
+            camText = `YOU finished the Rival with ${strikeText} ${lastAction.weapon} from ${lastAction.range}!`;
+        } else {
+            camText = `The RIVAL humiliated you with ${strikeText} ${lastAction.weapon} from ${lastAction.range}.`;
+        }
+        document.getElementById("killcam-text").innerHTML = camText;
+
+        if (playerWon) {
+            playerData.wins++;
+            eloChange = Math.floor(Math.random() * 11) + 25; 
+            creditEarned = 50;
+            playerData.elo += eloChange;
+            document.getElementById("res-title").innerText = "VICTORY";
+            document.getElementById("res-title").style.color = "var(--accent-green)";
+            document.getElementById("res-elo-change").innerText = `+${eloChange}`;
+            document.getElementById("res-elo-change").className = "elo-change elo-up";
+        } else {
+            playerData.losses++;
+            eloChange = Math.floor(Math.random() * 11) + 15;
+            creditEarned = 15;
+            playerData.elo = Math.max(0, playerData.elo - eloChange);
+            document.getElementById("res-title").innerText = "DEFEAT";
+            document.getElementById("res-title").style.color = "var(--accent-red)";
+            document.getElementById("res-elo-change").innerText = `-${eloChange}`;
+            document.getElementById("res-elo-change").className = "elo-change elo-down";
+        }
+
+        playerData.credits += creditEarned;
+        document.getElementById("res-credits").innerText = creditEarned;
+        document.getElementById("res-new-elo").innerText = playerData.elo;
+        
+        let newRank = getRank(playerData.elo);
+        if (newRank.name !== oldRank.name && playerWon) {
+            document.getElementById("res-rank-up").style.display = "block";
+            document.getElementById("res-rank-up").innerText = `🏆 PROMOTED TO ${newRank.name}!`;
+        } else {
+            document.getElementById("res-rank-up").style.display = "none";
+        }
+
+        saveStats();
+        switchScreen('results-screen');
+    }
+
+    function returnToMenu() {
+        updateMenuProfile();
+        switchScreen('menu-screen');
+    }
+</script>
+</body>
+</html>
