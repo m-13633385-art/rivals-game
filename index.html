@@ -3,31 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RIVALS 2D: RELOADED UPDATE</title>
+    <title>TANK RIVALS 2D: AIRDROP UPDATE</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Courier New', Courier, monospace; user-select: none; }
         canvas { display: block; }
         body { cursor: crosshair; }
 
+        /* LOADING SCREEN */
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 999; color: #00ffff; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #111; border-top: 5px solid #00ffff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         /* LOBBY UI */
-        #lobby { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a0b2e 0%, #000 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: #fff; text-align: center; overflow-y: auto; }
-        h1 { font-size: 64px; color: #00ffff; text-shadow: 0 0 20px #00ffff; margin-bottom: 5px; }
-        .box { background: rgba(0,0,0,0.8); padding: 30px; border: 2px solid #00ffff; border-radius: 10px; margin: 10px; width: 500px; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); }
-        .code-display { font-size: 36px; color: #ff00ff; font-weight: bold; letter-spacing: 8px; margin: 15px 0; }
-        input, select { background: #111; border: 2px solid #ff00ff; color: #fff; padding: 12px; font-size: 18px; width: 90%; text-align: center; margin-bottom: 15px; outline: none; font-family: inherit; }
-        button { background: #00ffff; color: #000; border: none; padding: 15px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 95%; margin-top: 10px; }
-        button:hover { background: #ff00ff; color: #fff; transform: scale(1.02); }
+        #lobby { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a1a00 0%, #000 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: #fff; text-align: center; overflow-y: auto; }
+        h1 { font-size: 72px; color: #ffcc00; text-shadow: 0 0 20px #ffcc00; margin-bottom: 5px; letter-spacing: 5px; }
+        .box { background: rgba(0,0,0,0.8); padding: 25px; border: 2px solid #ffcc00; border-radius: 10px; margin: 10px; width: 550px; box-shadow: 0 0 20px rgba(255, 204, 0, 0.2); }
+        .code-display { font-size: 36px; color: #00ffff; font-weight: bold; letter-spacing: 8px; margin: 15px 0; }
+        input, select { background: #111; border: 2px solid #00ffff; color: #fff; padding: 12px; font-size: 18px; width: 90%; text-align: center; margin-bottom: 10px; outline: none; font-family: inherit; }
+        button { background: #ffcc00; color: #000; border: none; padding: 15px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 95%; margin-top: 10px; text-transform: uppercase; }
+        button:hover { background: #fff; color: #000; transform: scale(1.02); }
         
         /* HUD UI */
         #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; }
-        #health-container { position: absolute; bottom: 30px; left: 30px; width: 350px; height: 35px; background: #111; border: 3px solid #333; }
-        #health-bar { width: 100%; height: 100%; background: #0f0; transition: width 0.1s; }
-        #health-text { position: absolute; top: 5px; left: 15px; font-size: 20px; font-weight: bold; color: white; text-shadow: 2px 2px 0 #000; }
-        #stance-text { position: absolute; bottom: 75px; left: 30px; font-size: 24px; color: #00ffff; font-weight: bold; text-shadow: 0 0 10px #00ffff; }
         
-        #ammo-container { position: absolute; bottom: 30px; right: 30px; text-align: right; }
-        #weapon-text { font-size: 32px; color: #ff00ff; font-weight: bold; text-shadow: 0 0 10px #ff00ff; }
+        /* Health & Shield */
+        #bars-container { position: absolute; bottom: 30px; left: 30px; width: 350px; }
+        .bar-bg { width: 100%; height: 25px; background: #111; border: 3px solid #333; margin-top: 5px; position: relative; }
+        #shield-bar { width: 100%; height: 100%; background: #00ffff; transition: width 0.1s; }
+        #health-bar { width: 100%; height: 100%; background: #0f0; transition: width 0.1s; }
+        .bar-text { position: absolute; top: 2px; left: 10px; font-size: 18px; font-weight: bold; color: white; text-shadow: 2px 2px 0 #000; }
+        
+        #menu-btn { position: absolute; top: 20px; left: 20px; background: #333; color: #fff; border: 2px solid #555; padding: 10px 20px; font-size: 16px; pointer-events: auto; cursor: pointer; }
+        #menu-btn:hover { background: #ff0055; border-color: #ff0055; }
+
+        #ammo-container { position: absolute; bottom: 30px; right: 30px; text-align: right; background: rgba(0,0,0,0.5); padding: 15px; border: 2px solid #555; }
+        #weapon-text { font-size: 32px; color: #ffcc00; font-weight: bold; text-shadow: 0 0 10px #ffcc00; }
         #ammo-text { font-size: 28px; color: #fff; font-weight: bold; margin-top: 5px; text-shadow: 2px 2px 0 #000; transition: color 0.2s; }
         
         #scoreboard { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); padding: 10px 30px; border: 2px solid #555; }
@@ -35,531 +46,396 @@
         .blue { color: #00ffff; text-shadow: 0 0 10px #00ffff; }
         .red { color: #ff0055; text-shadow: 0 0 10px #ff0055; }
         
-        #announcer { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 70px; font-weight: bold; color: #ff00ff; text-shadow: 0 0 20px #ff00ff; display: none; text-align: center; }
-        #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,0,0,0.3); opacity: 0; transition: opacity 0.1s; z-index: 5; }
+        #announcer { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 70px; font-weight: bold; color: #ffcc00; text-shadow: 0 0 20px #ffcc00; display: none; text-align: center; background: rgba(0,0,0,0.7); padding: 20px 50px; border: 4px solid #ffcc00; }
+        #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,0,0,0.4); opacity: 0; transition: opacity 0.1s; z-index: 5; }
+
+        /* Powerup HUD UI */
+        #buff-container { position: absolute; bottom: 100px; left: 30px; display: flex; flex-direction: column; gap: 10px; }
+        .buff-text { font-size: 24px; font-weight: bold; text-shadow: 2px 2px 0 #000; display: none; }
+        #buff-speed { color: #ffff00; }
+        #buff-damage { color: #aa00ff; }
     </style>
 </head>
 <body>
 
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <h2 id="loading-text">INITIALIZING TANK SYSTEMS...</h2>
+    </div>
+
     <div id="lobby">
-        <h1>RIVALS 2D: APEX</h1>
+        <h1>TANK RIVALS</h1>
         <div class="box">
-            <h3>SELECT YOUR WEAPON</h3>
+            <h3>TANK ARSENAL</h3>
             <select id="weapon-select"></select>
         </div>
         <div class="box">
-            <h3>HOST MATCH</h3>
+            <h3>MATCH SETTINGS</h3>
+            <select id="mode-select"><option value="1v1">1v1 DUEL (P2P Stable)</option></select>
             <select id="map-select">
-                <option value="0">MAP: CYBER ARENA</option>
-                <option value="1">MAP: CRIMSON CORRIDORS</option>
-                <option value="2">MAP: TOXIC FIELD</option>
-                <option value="3">MAP: THE VOID MAZE</option>
-                <option value="4">MAP: GOLDEN CROSSROADS</option>
+                <option value="0">MAP: TRENCH WARFARE</option>
+                <option value="1">MAP: DESERT STORM</option>
+                <option value="2">MAP: NEON CITY RUINS</option>
             </select>
             <div class="code-display" id="my-id">...</div>
-            <p style="color:#aaa; font-size: 12px;">SEND CODE TO RIVAL</p>
+            <p style="color:#aaa; font-size: 12px;">HOST CODE - SEND TO RIVALS</p>
         </div>
         <div class="box">
-            <h3>JOIN MATCH</h3>
-            <input type="text" id="join-input" placeholder="ENTER 5-LETTER CODE" maxlength="5">
-            <button id="join-btn">CONNECT & PLAY</button>
+            <h3>DEPLOY TO BATTLEFIELD</h3>
+            <input type="text" id="join-input" placeholder="ENTER HOST CODE" maxlength="5">
+            <button id="join-btn">CONNECT SQUAD</button>
         </div>
     </div>
 
     <div id="hud">
+        <button id="menu-btn" onclick="location.reload()">ABORT MATCH</button>
         <div id="damage-overlay"></div>
         <div id="scoreboard">
             <div class="score-num blue" id="score-you">0</div>
             <div style="color: #fff;">VS</div>
             <div class="score-num red" id="score-enemy">0</div>
         </div>
-        <div id="health-container"><div id="health-bar"></div><div id="health-text">100 / 100</div></div>
-        <div id="stance-text">STANDING</div>
         
-        <div id="ammo-container">
-            <div id="weapon-text">WEAPON</div>
-            <div id="ammo-text">30 / 30</div>
+        <div id="buff-container">
+            <div class="buff-text" id="buff-speed">⚡ SPEED OVERDRIVE</div>
+            <div class="buff-text" id="buff-damage">⚔️ 2X DAMAGE</div>
+        </div>
+
+        <div id="bars-container">
+            <div class="bar-bg"><div id="shield-bar"></div><div class="bar-text" id="shield-text">50 / 50 SHIELD</div></div>
+            <div class="bar-bg"><div id="health-bar"></div><div class="bar-text" id="health-text">100 / 100 ARMOR</div></div>
         </div>
         
-        <div id="announcer">MATCH START!</div>
+        <div id="ammo-container">
+            <div id="weapon-text">CANNON</div>
+            <div id="ammo-text">RELOAD: R</div>
+        </div>
+        <div id="announcer">ENGAGE!</div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <script>
         /* =====================================================================
-           PART 1: THE 50 WEAPON ARSENAL (NOW WITH AMMO & RELOAD TIMES)
+           PART 1: WEAPONS & MAPS
            ===================================================================== */
         const WEAPONS = [
-            // PISTOLS (Fast reload, low ammo)
-            { name: "G18 Classic", type: "Pistol", fireRate: 200, damage: 15, speed: 1200, spread: 0.05, color: "#ffffaa", size: 4, mag: 15, reload: 1200 },
-            { name: "Desert Eagle", type: "Pistol", fireRate: 600, damage: 45, speed: 1800, spread: 0.02, color: "#ffaa00", size: 6, mag: 7, reload: 1800 },
-            { name: "M1911", type: "Pistol", fireRate: 300, damage: 25, speed: 1400, spread: 0.04, color: "#dddddd", size: 5, mag: 8, reload: 1000 },
-            { name: "Revolver .357", type: "Pistol", fireRate: 500, damage: 40, speed: 1600, spread: 0.01, color: "#ff5500", size: 5, mag: 6, reload: 2000 },
-            { name: "Silenced USP", type: "Pistol", fireRate: 250, damage: 18, speed: 1500, spread: 0.03, color: "#8888ff", size: 4, mag: 12, reload: 1100 },
-            { name: "Dual Berettas", type: "Pistol", fireRate: 150, damage: 12, speed: 1100, spread: 0.08, color: "#ffffaa", size: 4, mag: 30, reload: 2200 },
-            { name: "Machine Pistol", type: "Pistol", fireRate: 80, damage: 8, speed: 1000, spread: 0.12, color: "#ffcc00", size: 3, mag: 20, reload: 1500 },
-            { name: "Heavy Handgun", type: "Pistol", fireRate: 700, damage: 55, speed: 2000, spread: 0.01, color: "#ff2200", size: 7, mag: 6, reload: 2500 },
-            { name: "Burst Pistol", type: "Pistol", fireRate: 350, damage: 20, speed: 1300, spread: 0.06, color: "#ccffcc", size: 4, mag: 15, reload: 1300 },
-            { name: "Pocket Sniper", type: "Pistol", fireRate: 1000, damage: 70, speed: 3000, spread: 0.00, color: "#ff00ff", size: 5, mag: 1, reload: 1500 }, // Shoot once, wait to reload
-            // SMGS (High ammo, medium reload)
-            { name: "MP5 Navy", type: "SMG", fireRate: 100, damage: 14, speed: 1400, spread: 0.07, color: "#ffff00", size: 4, mag: 30, reload: 2000 },
-            { name: "Vector .45", type: "SMG", fireRate: 60, damage: 10, speed: 1500, spread: 0.06, color: "#ffaa00", size: 4, mag: 25, reload: 1800 },
-            { name: "P90 Rush", type: "SMG", fireRate: 70, damage: 11, speed: 1300, spread: 0.09, color: "#ccccff", size: 4, mag: 50, reload: 3000 },
-            { name: "MAC-10", type: "SMG", fireRate: 80, damage: 12, speed: 1100, spread: 0.12, color: "#ffccaa", size: 4, mag: 32, reload: 2100 },
-            { name: "UMP-45", type: "SMG", fireRate: 150, damage: 18, speed: 1300, spread: 0.05, color: "#bbbbbb", size: 5, mag: 25, reload: 1900 },
-            { name: "Bizon", type: "SMG", fireRate: 90, damage: 13, speed: 1200, spread: 0.08, color: "#aaaaaa", size: 4, mag: 64, reload: 3500 },
-            { name: "MP7", type: "SMG", fireRate: 110, damage: 15, speed: 1400, spread: 0.06, color: "#ddffdd", size: 4, mag: 40, reload: 2200 },
-            { name: "Skorpion", type: "SMG", fireRate: 85, damage: 11, speed: 1000, spread: 0.10, color: "#ffddaa", size: 3, mag: 20, reload: 1500 },
-            { name: "Nailgun", type: "SMG", fireRate: 120, damage: 16, speed: 900, spread: 0.05, color: "#aaaaaa", size: 3, mag: 40, reload: 2500 },
-            { name: "Tommy Gun", type: "SMG", fireRate: 130, damage: 17, speed: 1200, spread: 0.07, color: "#ffaa55", size: 5, mag: 50, reload: 2800 },
-            // ASSAULT RIFLES (Standard mags, medium-slow reload)
-            { name: "AK-47 Vandal", type: "Rifle", fireRate: 160, damage: 24, speed: 1800, spread: 0.04, color: "#ff3300", size: 5, mag: 30, reload: 2500 },
-            { name: "M4A1 Phantom", type: "Rifle", fireRate: 130, damage: 20, speed: 1900, spread: 0.03, color: "#33ccff", size: 5, mag: 30, reload: 2200 },
-            { name: "SCAR-H", type: "Rifle", fireRate: 200, damage: 28, speed: 2000, spread: 0.02, color: "#ffaa33", size: 6, mag: 20, reload: 2600 },
-            { name: "FAMAS Burst", type: "Rifle", fireRate: 120, damage: 19, speed: 1700, spread: 0.03, color: "#aaaaaa", size: 5, mag: 25, reload: 2300 },
-            { name: "AUG Scoped", type: "Rifle", fireRate: 150, damage: 22, speed: 1900, spread: 0.02, color: "#33ff33", size: 5, mag: 30, reload: 2400 },
-            { name: "Galil AR", type: "Rifle", fireRate: 140, damage: 21, speed: 1600, spread: 0.05, color: "#ddaa77", size: 5, mag: 35, reload: 2700 },
-            { name: "G36C", type: "Rifle", fireRate: 135, damage: 20, speed: 1750, spread: 0.04, color: "#cccccc", size: 5, mag: 30, reload: 2100 },
-            { name: "FAL Heavy", type: "Rifle", fireRate: 250, damage: 32, speed: 2100, spread: 0.02, color: "#ff5522", size: 6, mag: 20, reload: 2800 },
-            { name: "L85A2", type: "Rifle", fireRate: 145, damage: 23, speed: 1800, spread: 0.03, color: "#88cc88", size: 5, mag: 30, reload: 2400 },
-            { name: "Tavor TAR-21", type: "Rifle", fireRate: 125, damage: 19, speed: 1850, spread: 0.04, color: "#aaaaff", size: 5, mag: 30, reload: 2200 },
-            // SNIPERS & DMR (Tiny mags, LONG wait times between shots, slow reload)
-            { name: "AWP Operator", type: "Sniper", fireRate: 1500, damage: 100, speed: 4000, spread: 0.00, color: "#00ff00", size: 8, mag: 5, reload: 3500 },
-            { name: "Scout SSG", type: "Sniper", fireRate: 1000, damage: 65, speed: 3000, spread: 0.00, color: "#aaffaa", size: 6, mag: 10, reload: 2800 },
-            { name: "SKS Marksman", type: "Sniper", fireRate: 300, damage: 35, speed: 2500, spread: 0.01, color: "#ffaa77", size: 5, mag: 10, reload: 2200 },
-            { name: "M14 EBR", type: "Sniper", fireRate: 400, damage: 45, speed: 2600, spread: 0.01, color: "#cccccc", size: 6, mag: 10, reload: 2500 },
-            { name: "Barrett .50 Cal", type: "Sniper", fireRate: 2000, damage: 150, speed: 5000, spread: 0.00, color: "#ff0000", size: 10, mag: 5, reload: 4000 },
-            { name: "Dragunov SVD", type: "Sniper", fireRate: 500, damage: 55, speed: 2800, spread: 0.01, color: "#ff8855", size: 6, mag: 10, reload: 2600 },
-            { name: "VSS Vintorez", type: "Sniper", fireRate: 250, damage: 30, speed: 1500, spread: 0.02, color: "#888888", size: 5, mag: 10, reload: 2000 },
-            { name: "Kar98k", type: "Sniper", fireRate: 1200, damage: 85, speed: 3200, spread: 0.00, color: "#ddaa55", size: 7, mag: 5, reload: 3000 },
-            { name: "Mini-14", type: "Sniper", fireRate: 280, damage: 28, speed: 2200, spread: 0.02, color: "#aaaaaa", size: 5, mag: 20, reload: 2300 },
-            { name: "Railgun", type: "Sniper", fireRate: 2500, damage: 200, speed: 6000, spread: 0.00, color: "#00ffff", size: 12, mag: 3, reload: 5000 },
-            // SHOTGUNS 
-            { name: "Pump Action", type: "Shotgun", fireRate: 800, damage: 15, speed: 1200, spread: 0.15, color: "#ffaa00", size: 4, pellets: 8, mag: 6, reload: 3000 },
-            { name: "Double Barrel", type: "Shotgun", fireRate: 400, damage: 20, speed: 1300, spread: 0.20, color: "#ff5500", size: 5, pellets: 12, mag: 2, reload: 1500 },
-            { name: "SPAS-12", type: "Shotgun", fireRate: 600, damage: 12, speed: 1100, spread: 0.12, color: "#aaaaaa", size: 4, pellets: 7, mag: 8, reload: 3500 },
-            { name: "Auto Shotgun", type: "Shotgun", fireRate: 250, damage: 8, speed: 1000, spread: 0.18, color: "#ff3333", size: 3, pellets: 5, mag: 10, reload: 2800 },
-            { name: "Sawed-Off", type: "Shotgun", fireRate: 500, damage: 25, speed: 900, spread: 0.30, color: "#cc7733", size: 5, pellets: 10, mag: 2, reload: 1200 },
-            // SPECIAL & HEAVY 
-            { name: "Minigun", type: "Heavy", fireRate: 40, damage: 12, speed: 1800, spread: 0.15, color: "#ffaa00", size: 5, mag: 200, reload: 6000 },
-            { name: "Plasma Rifle", type: "Energy", fireRate: 150, damage: 25, speed: 1200, spread: 0.02, color: "#ff00ff", size: 6, mag: 40, reload: 2500 },
-            { name: "Laser Beam", type: "Energy", fireRate: 20, damage: 5, speed: 4000, spread: 0.00, color: "#00ffff", size: 3, mag: 100, reload: 3000 },
-            { name: "M249 SAW", type: "Heavy", fireRate: 90, damage: 18, speed: 1600, spread: 0.08, color: "#ffffaa", size: 5, mag: 100, reload: 5000 },
-            { name: "BFG 9000", type: "Energy", fireRate: 3000, damage: 500, speed: 800, spread: 0.00, color: "#00ff00", size: 30, mag: 1, reload: 5000 }
+            { name: "Standard 75mm Cannon", type: "Standard", fireRate: 800, damage: 25, speed: 2000, spread: 0.02, color: "#ffaa00", size: 8, mag: 10, reload: 2000 },
+            { name: "Heavy 120mm Smoothbore", type: "Heavy", fireRate: 1500, damage: 55, speed: 2500, spread: 0.01, color: "#ff3300", size: 12, mag: 4, reload: 3500 },
+            { name: "Twin Autocannon", type: "Rapid", fireRate: 150, damage: 8, speed: 1800, spread: 0.06, color: "#ffffaa", size: 5, mag: 40, reload: 2500 },
+            { name: "Artillery Howitzer", type: "Explosive", fireRate: 2500, damage: 80, speed: 1200, spread: 0.05, color: "#ff5500", size: 16, mag: 1, reload: 3000 },
+            { name: "Plasma Accelerator", type: "Energy", fireRate: 1000, damage: 45, speed: 1500, spread: 0.00, color: "#00ffff", size: 10, mag: 8, reload: 2800 },
+            { name: "Railgun Slugger", type: "Sniper", fireRate: 2000, damage: 100, speed: 5000, spread: 0.00, color: "#ff00ff", size: 8, mag: 3, reload: 4000 },
+            { name: "Flak Shredder", type: "Shotgun", fireRate: 1200, damage: 10, speed: 1400, spread: 0.25, color: "#aaaaaa", size: 6, pellets: 12, mag: 4, reload: 3000 },
+            { name: "Vulcan Minigun", type: "Suppression", fireRate: 60, damage: 4, speed: 2200, spread: 0.15, color: "#ffcc00", size: 4, mag: 150, reload: 5000 },
+            { name: "Laser Disruptor", type: "Energy", fireRate: 300, damage: 15, speed: 4000, spread: 0.00, color: "#00ff00", size: 5, mag: 20, reload: 2000 },
+            { name: "Rocket Pods", type: "Explosive", fireRate: 400, damage: 30, speed: 1000, spread: 0.10, color: "#ff0000", size: 14, mag: 6, reload: 4500 }
         ];
 
         const wSelect = document.getElementById('weapon-select');
-        WEAPONS.forEach((w, i) => {
-            const opt = document.createElement('option');
-            opt.value = i; opt.innerText = `[${w.type}] ${w.name}`;
-            wSelect.appendChild(opt);
-        });
+        WEAPONS.forEach((w, i) => { const opt = document.createElement('option'); opt.value = i; opt.innerText = `[${w.type}] ${w.name}`; wSelect.appendChild(opt); });
 
-        /* =====================================================================
-           PART 2: UNIQUE MAP THEMES & GENERATOR
-           ===================================================================== */
-        const MAP_SIZE = 3000;
-        let currentMap = { walls: [], bg: '#050505', grid: '#1a1a1a', fill: '#111122', border: '#00ffff' };
+        const MAP_SIZE = 4000;
+        let currentMap = { walls: [], bg: '#222', grid: '#333', fill: '#444', border: '#555' };
 
         function generateMap(mapIndex) {
             let walls = [];
-            // Massive borders to stop dashing out
-            walls.push({ x: -1000, y: -1000, w: MAP_SIZE + 2000, h: 1000 }); 
-            walls.push({ x: -1000, y: MAP_SIZE, w: MAP_SIZE + 2000, h: 1000 }); 
-            walls.push({ x: -1000, y: 0, w: 1000, h: MAP_SIZE }); 
-            walls.push({ x: MAP_SIZE, y: 0, w: 1000, h: MAP_SIZE });
+            walls.push({ x: -1000, y: -1000, w: MAP_SIZE + 2000, h: 1000 }); walls.push({ x: -1000, y: MAP_SIZE, w: MAP_SIZE + 2000, h: 1000 }); 
+            walls.push({ x: -1000, y: 0, w: 1000, h: MAP_SIZE }); walls.push({ x: MAP_SIZE, y: 0, w: 1000, h: MAP_SIZE });
 
-            if (mapIndex == 0) { // CYBER ARENA
-                currentMap.bg = '#020208'; currentMap.grid = '#003366'; currentMap.fill = '#001122'; currentMap.border = '#00ffff';
-                walls.push({x: 500, y: 500, w: 300, h: 100}); walls.push({x: 2200, y: 500, w: 300, h: 100});
-                walls.push({x: 500, y: 2400, w: 300, h: 100}); walls.push({x: 2200, y: 2400, w: 300, h: 100});
-                walls.push({x: 1200, y: 1200, w: 600, h: 600});
-                walls.push({x: 800, y: 1400, w: 100, h: 200}); walls.push({x: 2100, y: 1400, w: 100, h: 200});
-            } 
-            else if (mapIndex == 1) { // CRIMSON CORRIDORS
-                currentMap.bg = '#080000'; currentMap.grid = '#330000'; currentMap.fill = '#220000'; currentMap.border = '#ff0033';
-                for(let i=200; i<2800; i+=400) { walls.push({x: i, y: 200, w: 50, h: 1000}); walls.push({x: i+200, y: 1800, w: 50, h: 1000}); }
-                walls.push({x: 0, y: 1400, w: 1200, h: 200}); walls.push({x: 1800, y: 1400, w: 1200, h: 200});
-            }
-            else if (mapIndex == 2) { // TOXIC FIELD 
-                currentMap.bg = '#010801'; currentMap.grid = '#002200'; currentMap.fill = '#001a00'; currentMap.border = '#33ff33';
-                walls.push({x: 300, y: 300, w: 200, h: 200}); walls.push({x: 2500, y: 2500, w: 200, h: 200});
-                walls.push({x: 2500, y: 300, w: 200, h: 200}); walls.push({x: 300, y: 2500, w: 200, h: 200});
-                walls.push({x: 1400, y: 1400, w: 200, h: 200}); 
-            }
-            else if (mapIndex == 3) { // THE VOID MAZE
-                currentMap.bg = '#05000a'; currentMap.grid = '#220044'; currentMap.fill = '#1a0033'; currentMap.border = '#aa00ff';
-                walls.push({x: 300, y: 300, w: 2400, h: 100}); walls.push({x: 300, y: 700, w: 100, h: 2000});
-                walls.push({x: 700, y: 700, w: 2000, h: 100}); walls.push({x: 2600, y: 1100, w: 100, h: 1600});
-                walls.push({x: 700, y: 1100, w: 1500, h: 100}); walls.push({x: 1100, y: 1500, w: 1500, h: 100});
-                walls.push({x: 1100, y: 1500, w: 100, h: 1200});
-            }
-            else if (mapIndex == 4) { // GOLDEN CROSSROADS
-                currentMap.bg = '#0a0800'; currentMap.grid = '#443300'; currentMap.fill = '#332200'; currentMap.border = '#ffcc00';
-                walls.push({x: 0, y: 0, w: 1200, h: 1200}); walls.push({x: 1800, y: 0, w: 1200, h: 1200});
-                walls.push({x: 0, y: 1800, w: 1200, h: 1200}); walls.push({x: 1800, y: 1800, w: 1200, h: 1200});
-                walls.push({x: 1400, y: 1400, w: 200, h: 200}); 
+            if (mapIndex == 0) { currentMap.bg = '#1a1813'; currentMap.grid = '#2a261a'; currentMap.fill = '#2b2515'; currentMap.border = '#594d2d';
+                walls.push({x: 500, y: 800, w: 1000, h: 200}); walls.push({x: 2500, y: 800, w: 1000, h: 200});
+                walls.push({x: 500, y: 3000, w: 1000, h: 200}); walls.push({x: 2500, y: 3000, w: 1000, h: 200});
+                walls.push({x: 1800, y: 1500, w: 400, h: 1000}); 
+            } else if (mapIndex == 1) { currentMap.bg = '#332910'; currentMap.grid = '#4a3d1c'; currentMap.fill = '#524523'; currentMap.border = '#a38a48';
+                walls.push({x: 800, y: 800, w: 400, h: 400}); walls.push({x: 2800, y: 2800, w: 400, h: 400});
+                walls.push({x: 2800, y: 800, w: 400, h: 400}); walls.push({x: 800, y: 2800, w: 400, h: 400}); walls.push({x: 1800, y: 1800, w: 400, h: 400}); 
+            } else if (mapIndex == 2) { currentMap.bg = '#050a14'; currentMap.grid = '#0a1a33'; currentMap.fill = '#0f244a'; currentMap.border = '#00ffff';
+                for(let i=400; i<3600; i+=800) { walls.push({x: i, y: 600, w: 200, h: 1200}); walls.push({x: i+400, y: 2200, w: 200, h: 1200}); }
             }
             currentMap.walls = walls;
         }
 
         /* =====================================================================
-           PART 3: GAME ENGINE & STATE
+           PART 2: GAME STATE, POWERUPS & NETWORKING
            ===================================================================== */
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resize); resize();
 
         const STATE = {
             isPlaying: false, isDead: false, isMatchOver: false,
-            myHp: 100, maxHp: 100, myKills: 0, enemyKills: 0, winScore: 5,
-            canShoot: true, screenShake: 0, mapSelection: 0,
-            isReloading: false, currentAmmo: 0
+            myHp: 100, maxHp: 100, myShield: 50, maxShield: 50, myKills: 0, enemyKills: 0, winScore: 5,
+            canShoot: true, screenShake: 0, isReloading: false, currentAmmo: 0,
+            buffs: { speed: 0, damage: 0 }, nextPowerupSpawn: 5000 
         };
 
         const NET = { peer: null, conn: null, code: '', isHost: false };
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        for(let i=0; i<5; i++) NET.code += chars.charAt(Math.floor(Math.random() * chars.length));
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; for(let i=0; i<5; i++) NET.code += chars.charAt(Math.floor(Math.random() * chars.length));
 
-        const player = { x: 200, y: 200, size: 40, color: '#00ffff', angle: 0, isDashing: false, stance: 'STAND' };
-        const enemy = { x: -1000, y: -1000, size: 40, color: '#ff0055', angle: 0, stance: 'STAND' };
+        const player = { x: 400, y: 400, width: 60, height: 80, color: '#00ffff', hullAngle: 0, turretAngle: 0, speed: 0 };
+        const enemy = { x: -1000, y: -1000, width: 60, height: 80, color: '#ff0055', hullAngle: 0, turretAngle: 0 };
         
-        let myWeapon = WEAPONS[0];
-        let enemyWeapon = WEAPONS[0]; 
-
-        let bullets = [];
-        let particles = [];
+        let myWeapon = WEAPONS[0]; let enemyWeapon = WEAPONS[0]; 
+        let bullets = []; let particles = []; let powerups = []; 
         const camera = { x: 0, y: 0 };
+        const mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false }; const keys = { w: false, a: false, s: false, d: false, r: false };
 
-        const keys = { w: false, a: false, s: false, d: false, shift: false, e: false, r: false };
-        const mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false };
-
-        window.addEventListener('keydown', e => { 
-            const k = e.key.toLowerCase(); 
-            if(keys.hasOwnProperty(k)) keys[k] = true; 
-            if(e.key === 'Shift') keys.shift = true;
-        });
-        window.addEventListener('keyup', e => { 
-            const k = e.key.toLowerCase(); 
-            if(keys.hasOwnProperty(k)) keys[k] = false; 
-            if(e.key === 'Shift') keys.shift = false;
-        });
+        window.addEventListener('keydown', e => { const k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = true; });
+        window.addEventListener('keyup', e => { const k = e.key.toLowerCase(); if(keys.hasOwnProperty(k)) keys[k] = false; });
         window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-        window.addEventListener('mousedown', () => { mouse.down = true; });
-        window.addEventListener('mouseup', () => { mouse.down = false; });
+        window.addEventListener('mousedown', () => { mouse.down = true; }); window.addEventListener('mouseup', () => { mouse.down = false; });
 
-        /* =====================================================================
-           PART 4: NETWORKING
-           ===================================================================== */
         NET.peer = new Peer('RIV2D-' + NET.code);
         NET.peer.on('open', id => { document.getElementById('my-id').innerText = NET.code; });
 
         NET.peer.on('connection', c => {
-            NET.conn = c; NET.isHost = true;
-            STATE.mapSelection = parseInt(document.getElementById('map-select').value);
-            setupNetwork();
-            NET.conn.on('open', () => { NET.conn.send({ type: 'setup', map: STATE.mapSelection, weaponIndex: document.getElementById('weapon-select').value }); });
-            startGame();
+            NET.conn = c; NET.isHost = true; setupNetwork();
+            NET.conn.on('open', () => { NET.conn.send({ type: 'setup', map: document.getElementById('map-select').value, weaponIndex: document.getElementById('weapon-select').value }); });
+            fakeLoadingScreen();
         });
 
         document.getElementById('join-btn').onclick = () => {
             const code = document.getElementById('join-input').value.toUpperCase();
             if(code.length !== 5) return alert("CODE MUST BE 5 LETTERS");
-            NET.conn = NET.peer.connect('RIV2D-' + code);
-            NET.isHost = false;
-            setupNetwork();
+            NET.conn = NET.peer.connect('RIV2D-' + code); NET.isHost = false; setupNetwork(); fakeLoadingScreen();
         };
 
         function setupNetwork() {
             NET.conn.on('data', data => {
-                if (data.type === 'setup') {
-                    STATE.mapSelection = data.map; enemyWeapon = WEAPONS[data.weaponIndex];
-                    if(!NET.isHost) { NET.conn.send({ type: 'weapon_sync', weaponIndex: document.getElementById('weapon-select').value }); startGame(); }
-                }
-                if (data.type === 'weapon_sync') { enemyWeapon = WEAPONS[data.weaponIndex]; }
-                if (data.type === 'move') { enemy.x = data.x; enemy.y = data.y; enemy.angle = data.angle; enemy.stance = data.stance; }
-                if (data.type === 'shoot') { spawnBullet(data.bx, data.by, data.vx, data.vy, false, enemyWeapon); STATE.screenShake = 3; }
+                if (data.type === 'setup') { enemyWeapon = WEAPONS[data.weaponIndex]; if(!NET.isHost) { NET.conn.send({ type: 'weapon_sync', weaponIndex: document.getElementById('weapon-select').value, map: data.map }); } startGame(data.map); }
+                if (data.type === 'weapon_sync') { enemyWeapon = WEAPONS[data.weaponIndex]; startGame(data.map); }
+                if (data.type === 'move') { enemy.x = data.x; enemy.y = data.y; enemy.hullAngle = data.hA; enemy.turretAngle = data.tA; }
+                if (data.type === 'shoot') { spawnBullet(data.bx, data.by, data.vx, data.vy, false, enemyWeapon, data.dmgColor); STATE.screenShake = 5; }
                 if (data.type === 'hit') takeDamage(data.dmg);
-                if (data.type === 'death') {
-                    STATE.myKills++; updateScore(); createExplosion(enemy.x, enemy.y, enemy.color);
-                    if(STATE.myKills >= STATE.winScore) triggerMatchWin("YOU WIN!"); else announce("ENEMY ELIMINATED!", 1500);
-                }
+                if (data.type === 'death') { STATE.myKills++; updateScore(); createExplosion(enemy.x, enemy.y, enemy.color, 100); if(STATE.myKills >= STATE.winScore) triggerMatchWin("VICTORY!"); else announce("ENEMY TANK DESTROYED!", 1500); }
+                // Powerup Syncing
+                if (data.type === 'spawn_powerup') powerups.push(data.p);
+                if (data.type === 'collect_powerup') { powerups = powerups.filter(p => p.id !== data.id); createExplosion(data.x, data.y, '#ffffff', 20); }
             });
         }
 
         /* =====================================================================
-           PART 5: MOVEMENT & COMBAT LOGIC (AMMO ENFORCEMENT)
+           PART 3: CORE LOGIC & POWERUPS
            ===================================================================== */
-        function triggerMatchWin(msg) {
-            STATE.isMatchOver = true; announce(msg, 4000);
-            document.getElementById('hud').style.background = "rgba(0,0,0,0.8)";
-            setTimeout(() => {
-                STATE.myKills = 0; STATE.enemyKills = 0; updateScore();
-                STATE.isMatchOver = false; document.getElementById('hud').style.background = "transparent";
-                respawn(); announce("MATCH 2: FIGHT!", 2000);
-            }, 4000);
-        }
-
+        function fakeLoadingScreen() { document.getElementById('lobby').style.display = 'none'; document.getElementById('loading-screen').style.display = 'flex'; }
+        
         function updateAmmoDisplay() {
             const txt = document.getElementById('ammo-text');
-            if (STATE.isReloading) {
-                txt.innerText = "RELOADING..."; txt.style.color = "#ff0000";
-            } else {
-                txt.innerText = `${STATE.currentAmmo} / ${myWeapon.mag}`;
-                txt.style.color = STATE.currentAmmo <= (myWeapon.mag * 0.25) ? "#ffaa00" : "#fff";
-            }
+            if (STATE.isReloading) { txt.innerText = "RELOADING..."; txt.style.color = "#ff0000"; } 
+            else { txt.innerText = `${STATE.currentAmmo} / ${myWeapon.mag}`; txt.style.color = STATE.currentAmmo <= (myWeapon.mag * 0.25) ? "#ffcc00" : "#fff"; }
         }
 
         function triggerReload() {
-            if (STATE.isReloading || STATE.currentAmmo === myWeapon.mag || STATE.isDead || STATE.isMatchOver) return;
+            if (STATE.isReloading || STATE.currentAmmo >= myWeapon.mag || STATE.isDead || STATE.isMatchOver) return;
             STATE.isReloading = true; updateAmmoDisplay();
-            setTimeout(() => {
-                if (STATE.isDead) return; // Cancel reload if you die
-                STATE.currentAmmo = myWeapon.mag; STATE.isReloading = false; updateAmmoDisplay();
-            }, myWeapon.reload);
+            setTimeout(() => { if (!STATE.isDead) { STATE.currentAmmo = myWeapon.mag; STATE.isReloading = false; updateAmmoDisplay(); } }, myWeapon.reload);
         }
 
-        function spawnBullet(x, y, vx, vy, isMine, wpn) {
-            bullets.push({ x, y, vx, vy, isMine, life: 150, radius: wpn.size, color: wpn.color, damage: wpn.damage });
+        function spawnBullet(x, y, vx, vy, isMine, wpn, customColor) {
+            bullets.push({ x, y, vx, vy, isMine, life: 150, radius: wpn.size, color: customColor || wpn.color, damage: isMine ? (wpn.damage * (STATE.buffs.damage > 0 ? 2 : 1)) : wpn.damage });
         }
 
         function fireWeapon() {
-            if (!STATE.canShoot || STATE.isDead || STATE.isMatchOver || STATE.isReloading) return;
+            if (!STATE.canShoot || STATE.isDead || STATE.isMatchOver || STATE.isReloading) { if (STATE.currentAmmo <= 0 && !STATE.isReloading && mouse.down) triggerReload(); return; }
             if (STATE.currentAmmo <= 0) { triggerReload(); return; }
 
-            // Apply strict Fire Rate Wait
-            STATE.canShoot = false; 
-            setTimeout(() => { STATE.canShoot = true; }, myWeapon.fireRate); 
+            STATE.canShoot = false; setTimeout(() => { STATE.canShoot = true; }, myWeapon.fireRate); 
+            STATE.currentAmmo--; updateAmmoDisplay(); STATE.screenShake = 15;
             
-            STATE.currentAmmo--; updateAmmoDisplay();
-            STATE.screenShake = 15;
-            const bx = player.x; const by = player.y;
-            
-            let currentSpread = myWeapon.spread;
-            if(player.stance === 'CROUCH') currentSpread = 0.0;
-            if(player.stance === 'SPRINT') currentSpread *= 2.0;
-            
+            const barrelLength = 60; const bx = player.x + Math.cos(player.turretAngle) * barrelLength; const by = player.y + Math.sin(player.turretAngle) * barrelLength;
+            let currentBulletColor = STATE.buffs.damage > 0 ? '#aa00ff' : myWeapon.color; // Purple if damage boosted
+
             let pellets = myWeapon.pellets || 1; 
             for(let i=0; i<pellets; i++) {
-                let finalAngle = player.angle + (Math.random() - 0.5) * currentSpread;
+                let finalAngle = player.turretAngle + (Math.random() - 0.5) * myWeapon.spread;
                 const bvx = Math.cos(finalAngle) * myWeapon.speed; const bvy = Math.sin(finalAngle) * myWeapon.speed;
-                spawnBullet(bx, by, bvx, bvy, true, myWeapon);
-                if(NET.conn && NET.conn.open) NET.conn.send({ type: 'shoot', bx, by, vx: bvx, vy: bvy });
+                spawnBullet(bx, by, bvx, bvy, true, myWeapon, currentBulletColor);
+                if(NET.conn && NET.conn.open) NET.conn.send({ type: 'shoot', bx, by, vx: bvx, vy: bvy, dmgColor: currentBulletColor });
             }
-
+            createExplosion(bx, by, currentBulletColor, 10);
             if(STATE.currentAmmo <= 0) triggerReload();
         }
 
         function takeDamage(amount) {
             if (STATE.isDead || STATE.isMatchOver) return;
+            if (STATE.myShield > 0) { if (amount <= STATE.myShield) { STATE.myShield -= amount; amount = 0; } else { amount -= STATE.myShield; STATE.myShield = 0; } }
             STATE.myHp -= amount;
-            document.getElementById('damage-overlay').style.opacity = 1;
-            setTimeout(() => document.getElementById('damage-overlay').style.opacity = 0, 100);
-            STATE.screenShake = 20;
 
-            const bar = document.getElementById('health-bar');
-            bar.style.width = Math.max(0, (STATE.myHp / STATE.maxHp) * 100) + "%";
-            document.getElementById('health-text').innerText = `${Math.max(0, STATE.myHp)} / ${STATE.maxHp}`;
-            if(STATE.myHp <= 30) bar.style.background = "#ff0000"; else bar.style.background = "#0f0";
+            document.getElementById('damage-overlay').style.opacity = 1; setTimeout(() => document.getElementById('damage-overlay').style.opacity = 0, 100); STATE.screenShake = 25;
+            updateHUD(); if (STATE.myHp <= 0) die();
+        }
 
-            if (STATE.myHp <= 0) die();
+        function updateHUD() {
+            document.getElementById('shield-bar').style.width = Math.max(0, (STATE.myShield / STATE.maxShield) * 100) + "%";
+            document.getElementById('shield-text').innerText = `${Math.floor(Math.max(0, STATE.myShield))} / ${STATE.maxShield} SHIELD`;
+            document.getElementById('health-bar').style.width = Math.max(0, (STATE.myHp / STATE.maxHp) * 100) + "%";
+            document.getElementById('health-text').innerText = `${Math.floor(Math.max(0, STATE.myHp))} / ${STATE.maxHp} ARMOR`;
+            
+            document.getElementById('buff-speed').style.display = STATE.buffs.speed > 0 ? 'block' : 'none';
+            document.getElementById('buff-damage').style.display = STATE.buffs.damage > 0 ? 'block' : 'none';
+        }
+
+        function collectPowerup(type) {
+            if (type === 'speed') { STATE.buffs.speed = 5000; announce("SPEED OVERDRIVE!", 1000); }
+            else if (type === 'shield') { STATE.myShield = Math.min(STATE.maxShield, STATE.myShield + 25); announce("SHIELD REPAIRED!", 1000); }
+            else if (type === 'damage') { STATE.buffs.damage = 5000; announce("DAMAGE AMPLIFIED!", 1000); }
+            updateHUD();
         }
 
         function die() {
-            STATE.isDead = true; STATE.isReloading = false; STATE.enemyKills++; updateScore();
-            createExplosion(player.x, player.y, player.color);
+            STATE.isDead = true; STATE.isReloading = false; STATE.enemyKills++; updateScore(); createExplosion(player.x, player.y, player.color, 100);
             if(NET.conn) NET.conn.send({ type: 'death' });
-            if(STATE.enemyKills >= STATE.winScore) triggerMatchWin("ENEMY WINS!");
-            else { announce("YOU DIED", 2000); setTimeout(respawn, 2500); }
+            if(STATE.enemyKills >= STATE.winScore) triggerMatchWin("DEFEAT."); else { announce("TANK DESTROYED", 2000); setTimeout(respawn, 2500); }
         }
 
         function respawn() {
-            STATE.isDead = false; STATE.myHp = STATE.maxHp;
-            STATE.currentAmmo = myWeapon.mag; STATE.isReloading = false; updateAmmoDisplay();
-            player.x = NET.isHost ? 300 : MAP_SIZE - 300; player.y = NET.isHost ? 300 : MAP_SIZE - 300;
-            document.getElementById('health-bar').style.width = "100%";
-            document.getElementById('health-bar').style.background = "#0f0";
-            document.getElementById('health-text').innerText = "100 / 100";
+            STATE.isDead = false; STATE.myHp = STATE.maxHp; STATE.myShield = STATE.maxShield; STATE.buffs = { speed: 0, damage: 0 };
+            STATE.currentAmmo = myWeapon.mag; STATE.isReloading = false; updateAmmoDisplay(); updateHUD();
+            player.x = NET.isHost ? 500 : MAP_SIZE - 500; player.y = NET.isHost ? 500 : MAP_SIZE - 500; player.hullAngle = NET.isHost ? 0 : Math.PI; player.speed = 0;
         }
 
-        function createExplosion(x, y, color) {
-            for(let i=0; i<40; i++) particles.push({ x, y, vx: (Math.random()-0.5)*1000, vy: (Math.random()-0.5)*1000, life: 1.0, color, size: Math.random()*8+2 });
+        function triggerMatchWin(msg) {
+            STATE.isMatchOver = true; announce(msg, 4000); document.getElementById('hud').style.background = "rgba(0,0,0,0.8)"; powerups = [];
+            setTimeout(() => { STATE.myKills = 0; STATE.enemyKills = 0; updateScore(); STATE.isMatchOver = false; document.getElementById('hud').style.background = "transparent"; respawn(); announce("NEXT ROUND: ENGAGE!", 2000); }, 4000);
         }
 
-        function checkCollision(r1, r2) {
-            return (r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y);
-        }
+        function updateScore() { document.getElementById('score-you').innerText = STATE.myKills; document.getElementById('score-enemy').innerText = STATE.enemyKills; }
+        function announce(txt, time=2000) { const el = document.getElementById('announcer'); el.innerText = txt; el.style.display = 'block'; if(time > 0) setTimeout(() => el.style.display = 'none', time); }
+        function createExplosion(x, y, color, count=40) { for(let i=0; i<count; i++) particles.push({ x, y, vx: (Math.random()-0.5)*1200, vy: (Math.random()-0.5)*1200, life: 1.0, color, size: Math.random()*10+5 }); }
+        function checkCollision(r1, r2) { return (r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y); }
 
         /* =====================================================================
-           PART 6: MASTER GAME LOOP
+           PART 4: MAIN LOOP & RENDERING
            ===================================================================== */
         let lastTime = performance.now();
 
-        function startGame() {
-            myWeapon = WEAPONS[document.getElementById('weapon-select').value];
-            document.getElementById('weapon-text').innerText = myWeapon.name;
-            generateMap(STATE.mapSelection);
-            document.getElementById('lobby').style.display = 'none';
-            document.getElementById('hud').style.display = 'block';
-            STATE.isPlaying = true; respawn();
-            requestAnimationFrame(gameLoop);
+        function startGame(mapId) {
+            setTimeout(() => { 
+                myWeapon = WEAPONS[document.getElementById('weapon-select').value]; document.getElementById('weapon-text').innerText = myWeapon.name;
+                generateMap(mapId); document.getElementById('loading-screen').style.display = 'none'; document.getElementById('hud').style.display = 'block';
+                STATE.isPlaying = true; respawn(); requestAnimationFrame(gameLoop);
+            }, 2000);
         }
 
-        function updateScore() {
-            document.getElementById('score-you').innerText = STATE.myKills;
-            document.getElementById('score-enemy').innerText = STATE.enemyKills;
+        function drawTank(x, y, hAngle, tAngle, color, gunColor) {
+            ctx.save(); ctx.translate(x, y);
+            ctx.save(); ctx.rotate(hAngle); ctx.fillStyle = '#222'; ctx.fillRect(-40, -45, 80, 20); ctx.fillRect(-40, 25, 80, 20); ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 10; ctx.fillRect(-35, -30, 70, 60); ctx.restore();
+            ctx.save(); ctx.rotate(tAngle); ctx.fillStyle = gunColor; ctx.shadowBlur = 0; ctx.fillRect(0, -8, 65, 16); ctx.fillStyle = '#111'; ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 25, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore();
+            ctx.restore();
         }
 
-        function announce(txt, time=2000) {
-            const el = document.getElementById('announcer');
-            el.innerText = txt; el.style.display = 'block';
-            if(time > 0) setTimeout(() => el.style.display = 'none', time);
+        function drawMinimap() {
+            const mmSize = 250; const scale = mmSize / MAP_SIZE;
+            ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.translate(canvas.width - mmSize - 20, 20);
+            ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2; ctx.fillRect(0, 0, mmSize, mmSize); ctx.strokeRect(0, 0, mmSize, mmSize);
+            ctx.fillStyle = 'rgba(100,100,100,0.5)'; for(let w of currentMap.walls) if(w.w < MAP_SIZE && w.h < MAP_SIZE) ctx.fillRect(w.x * scale, w.y * scale, w.w * scale, w.h * scale);
+            for(let p of powerups) { ctx.fillStyle = p.color; ctx.fillRect(p.x * scale - 2, p.y * scale - 2, 4, 4); }
+            if (NET.conn) { ctx.fillStyle = '#ff0055'; ctx.beginPath(); ctx.arc(enemy.x * scale, enemy.y * scale, 4, 0, Math.PI*2); ctx.fill(); }
+            if (!STATE.isDead) { ctx.fillStyle = '#00ffff'; ctx.beginPath(); ctx.arc(player.x * scale, player.y * scale, 4, 0, Math.PI*2); ctx.fill(); }
+            ctx.restore();
         }
 
         function gameLoop(timestamp) {
             if(!STATE.isPlaying) return;
-            const dt = (timestamp - lastTime) / 1000;
-            lastTime = timestamp;
+            const dt = (timestamp - lastTime) / 1000; lastTime = timestamp;
 
-            // --- 1. PLAYER INPUT ---
-            if (!STATE.isDead && !STATE.isMatchOver) {
-                mouse.worldX = mouse.x + camera.x - canvas.width/2;
-                mouse.worldY = mouse.y + camera.y - canvas.height/2;
-                player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
-
-                if (mouse.down) fireWeapon();
-                if (keys.r) triggerReload();
-
-                let speed = 300; player.stance = 'STAND';
-                document.getElementById('stance-text').style.color = "#00ffff";
-
-                if (keys.e) { speed = 100; player.stance = 'CROUCH'; document.getElementById('stance-text').style.color = "#ffff00"; }
-                else if (keys.shift) { speed = 550; player.stance = 'SPRINT'; document.getElementById('stance-text').style.color = "#ff00ff"; }
-
-                if (keys.shift && keys.e && !player.isDashing) {
-                    player.isDashing = true; speed = 2000; setTimeout(() => player.isDashing = false, 200);
-                }
-
-                document.getElementById('stance-text').innerText = player.stance;
-
-                let dx = 0, dy = 0;
-                if(keys.w) dy -= 1; if(keys.s) dy += 1;
-                if(keys.a) dx -= 1; if(keys.d) dx += 1;
-                if(dx !== 0 && dy !== 0) { const len = Math.hypot(dx, dy); dx /= len; dy /= len; }
-
-                let vx = dx * speed; let vy = dy * speed;
-                
-                player.x += vx * dt;
-                let pRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
-                for(let w of currentMap.walls) {
-                    if(checkCollision(pRect, w)) {
-                        if(vx > 0) player.x = w.x - player.size/2; else player.x = w.x + w.w + player.size/2;
-                    }
-                }
-
-                player.y += vy * dt;
-                pRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
-                for(let w of currentMap.walls) {
-                    if(checkCollision(pRect, w)) {
-                        if(vy > 0) player.y = w.y - player.size/2; else player.y = w.y + w.h + player.size/2;
-                    }
-                }
-
-                player.x = Math.max(player.size / 2, Math.min(MAP_SIZE - player.size / 2, player.x));
-                player.y = Math.max(player.size / 2, Math.min(MAP_SIZE - player.size / 2, player.y));
-
-                if (NET.conn && timestamp % 50 < 20) {
-                    NET.conn.send({ type: 'move', x: player.x, y: player.y, angle: player.angle, stance: player.stance });
-                }
+            // Powerup Spawner (Host Only)
+            if (NET.isHost && timestamp > STATE.nextPowerupSpawn && !STATE.isMatchOver) {
+                STATE.nextPowerupSpawn = timestamp + 8000; // Every 8 seconds
+                const types = [{t:'speed', c:'#ffff00'}, {t:'shield', c:'#00ffff'}, {t:'damage', c:'#aa00ff'}];
+                const randType = types[Math.floor(Math.random() * types.length)];
+                const newP = { id: Math.random().toString(), type: randType.t, color: randType.c, x: Math.random() * (MAP_SIZE - 400) + 200, y: Math.random() * (MAP_SIZE - 400) + 200 };
+                powerups.push(newP); if(NET.conn) NET.conn.send({ type: 'spawn_powerup', p: newP });
             }
 
-            // --- 2. BULLET PHYSICS ---
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                let b = bullets[i];
-                b.x += b.vx * dt; b.y += b.vy * dt; b.life--;
+            // Buff Timers
+            if (STATE.buffs.speed > 0) { STATE.buffs.speed -= dt * 1000; if(STATE.buffs.speed <= 0) updateHUD(); }
+            if (STATE.buffs.damage > 0) { STATE.buffs.damage -= dt * 1000; if(STATE.buffs.damage <= 0) updateHUD(); }
 
-                let destroyed = false;
-                for(let w of currentMap.walls) {
-                    if(b.x > w.x && b.x < w.x+w.w && b.y > w.y && b.y < w.y+w.h) {
-                        createExplosion(b.x, b.y, currentMap.border); destroyed = true; break;
+            // Input & Physics
+            if (!STATE.isDead && !STATE.isMatchOver) {
+                mouse.worldX = mouse.x + camera.x - canvas.width/2; mouse.worldY = mouse.y + camera.y - canvas.height/2;
+                player.turretAngle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+
+                if (mouse.down) fireWeapon(); if (keys.r && !STATE.isReloading && STATE.currentAmmo < myWeapon.mag) triggerReload();
+
+                const turnSpeed = STATE.buffs.speed > 0 ? 4.0 : 2.5; 
+                if (keys.a) player.hullAngle -= turnSpeed * dt; if (keys.d) player.hullAngle += turnSpeed * dt;
+
+                let targetSpeed = 0; const maxSpeed = STATE.buffs.speed > 0 ? 650 : 350; const accel = STATE.buffs.speed > 0 ? 1500 : 800;
+                if (keys.w) targetSpeed = maxSpeed; else if (keys.s) targetSpeed = -maxSpeed/2;
+                
+                if (player.speed < targetSpeed) player.speed = Math.min(targetSpeed, player.speed + accel * dt);
+                else if (player.speed > targetSpeed) player.speed = Math.max(targetSpeed, player.speed - accel * dt);
+
+                let vx = Math.cos(player.hullAngle) * player.speed; let vy = Math.sin(player.hullAngle) * player.speed;
+                
+                player.x += vx * dt; let pRect = { x: player.x - 30, y: player.y - 30, w: 60, h: 60 };
+                for(let w of currentMap.walls) if(checkCollision(pRect, w)) { if(vx > 0) player.x = w.x - 30; else player.x = w.x + w.w + 30; player.speed = 0;}
+
+                player.y += vy * dt; pRect = { x: player.x - 30, y: player.y - 30, w: 60, h: 60 };
+                for(let w of currentMap.walls) if(checkCollision(pRect, w)) { if(vy > 0) player.y = w.y - 30; else player.y = w.y + w.h + 30; player.speed = 0;}
+
+                // Collect Powerups
+                for (let i = powerups.length - 1; i >= 0; i--) {
+                    let p = powerups[i];
+                    if (Math.hypot(player.x - p.x, player.y - p.y) < 55) { // Tank radius + crate radius
+                        collectPowerup(p.type);
+                        if (NET.conn) NET.conn.send({ type: 'collect_powerup', id: p.id, x: p.x, y: p.y });
+                        createExplosion(p.x, p.y, '#ffffff', 20);
+                        powerups.splice(i, 1);
                     }
                 }
 
+                if (NET.conn && timestamp % 50 < 20) NET.conn.send({ type: 'move', x: player.x, y: player.y, hA: player.hullAngle, tA: player.turretAngle });
+            }
+
+            // Bullet Logic
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i]; b.x += b.vx * dt; b.y += b.vy * dt; b.life--;
+                let destroyed = false;
+                for(let w of currentMap.walls) if(b.x > w.x && b.x < w.x+w.w && b.y > w.y && b.y < w.y+w.h) { createExplosion(b.x, b.y, currentMap.border, 15); destroyed = true; break; }
+
                 if (b.isMine && !destroyed && !STATE.isMatchOver) {
-                    if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < enemy.size/2 + b.radius) {
-                        createExplosion(b.x, b.y, '#ff0000');
-                        if(NET.conn) NET.conn.send({ type: 'hit', dmg: b.damage });
-                        destroyed = true;
+                    if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < 40 + b.radius) {
+                        createExplosion(b.x, b.y, '#ff0000', 20); if(NET.conn) NET.conn.send({ type: 'hit', dmg: b.damage }); destroyed = true;
                     }
                 }
                 if (destroyed || b.life <= 0) bullets.splice(i, 1);
             }
 
-            // --- 3. PARTICLES & CAMERA ---
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vx * dt; p.y += p.vy * dt;
-                p.vx *= 0.9; p.vy *= 0.9; p.life -= dt * 2;
-                if(p.life <= 0) particles.splice(i, 1);
-            }
+            // Particles & Camera
+            for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.92; p.vy *= 0.92; p.life -= dt * 1.5; if(p.life <= 0) particles.splice(i, 1); }
+            camera.x += (player.x - camera.x) * 0.1; camera.y += (player.y - camera.y) * 0.1; if(STATE.screenShake > 0) STATE.screenShake *= 0.85;
 
-            camera.x += (player.x - camera.x) * 0.15; camera.y += (player.y - camera.y) * 0.15;
-            if(STATE.screenShake > 0) STATE.screenShake *= 0.85;
-
-            // --- 4. RENDER GRAPHICS ---
-            ctx.fillStyle = currentMap.bg;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+            // Render
+            ctx.fillStyle = currentMap.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.save();
             let sx = (Math.random()-0.5)*STATE.screenShake; let sy = (Math.random()-0.5)*STATE.screenShake;
             ctx.translate(canvas.width/2 - camera.x + sx, canvas.height/2 - camera.y + sy);
 
-            ctx.strokeStyle = currentMap.grid; ctx.lineWidth = 2;
-            ctx.beginPath();
-            for(let i=0; i<=MAP_SIZE; i+=100) { ctx.moveTo(i,0); ctx.lineTo(i,MAP_SIZE); ctx.moveTo(0,i); ctx.lineTo(MAP_SIZE,i); }
-            ctx.stroke();
+            ctx.strokeStyle = currentMap.grid; ctx.lineWidth = 2; ctx.beginPath();
+            for(let i=0; i<=MAP_SIZE; i+=200) { ctx.moveTo(i,0); ctx.lineTo(i,MAP_SIZE); ctx.moveTo(0,i); ctx.lineTo(MAP_SIZE,i); } ctx.stroke();
 
-            ctx.fillStyle = currentMap.fill; ctx.strokeStyle = currentMap.border; ctx.lineWidth = 3;
-            for(let w of currentMap.walls) {
-                if(w.w < MAP_SIZE && w.h < MAP_SIZE) {
-                    ctx.fillRect(w.x, w.y, w.w, w.h); ctx.strokeRect(w.x, w.y, w.w, w.h);
-                }
-            }
+            ctx.fillStyle = currentMap.fill; ctx.strokeStyle = currentMap.border; ctx.lineWidth = 4;
+            for(let w of currentMap.walls) if(w.w < MAP_SIZE && w.h < MAP_SIZE) { ctx.fillRect(w.x, w.y, w.w, w.h); ctx.strokeRect(w.x, w.y, w.w, w.h); }
 
-            if (NET.conn) {
-                ctx.save(); ctx.translate(enemy.x, enemy.y); ctx.rotate(enemy.angle);
-                if(enemy.stance === 'CROUCH') ctx.scale(0.8, 0.8);
-                ctx.fillStyle = enemy.color; ctx.shadowColor = enemy.color; ctx.shadowBlur = 10;
-                ctx.fillRect(-enemy.size/2, -enemy.size/2, enemy.size, enemy.size);
-                ctx.fillStyle = enemyWeapon.color; ctx.shadowBlur = 0;
-                ctx.fillRect(0, -4, enemy.size/2 + 15, 8);
-                ctx.restore();
+            // Draw Powerups
+            for(let p of powerups) {
+                ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 15;
+                ctx.fillRect(p.x - 20, p.y - 20, 40, 40);
+                ctx.fillStyle = '#fff'; ctx.shadowBlur = 0; ctx.textAlign = 'center'; ctx.font = '20px Courier';
+                ctx.fillText('?', p.x, p.y + 6);
             }
 
-            if (!STATE.isDead) {
-                ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
-                if(player.stance === 'CROUCH') ctx.scale(0.8, 0.8);
-                if(player.isDashing) { ctx.fillStyle = 'rgba(0,255,255,0.5)'; ctx.fillRect(-player.size, -player.size/2, player.size, player.size); }
-                ctx.fillStyle = player.color; ctx.shadowColor = player.color; ctx.shadowBlur = 10;
-                ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
-                ctx.fillStyle = myWeapon.color; ctx.shadowBlur = 0;
-                ctx.fillRect(0, -4, player.size/2 + 15, 8);
-                ctx.restore();
-            }
+            if (NET.conn) drawTank(enemy.x, enemy.y, enemy.hullAngle, enemy.turretAngle, enemy.color, enemyWeapon.color);
+            if (!STATE.isDead) drawTank(player.x, player.y, player.hullAngle, player.turretAngle, player.color, myWeapon.color);
 
-            for(let b of bullets) {
-                ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
-                ctx.fillStyle = b.color; ctx.shadowColor = b.color; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
-            }
-            for(let p of particles) {
-                ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
-            }
-            ctx.globalAlpha = 1.0;
-            ctx.restore();
+            for(let b of bullets) { ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); ctx.fillStyle = b.color; ctx.shadowColor = b.color; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0; }
+            for(let p of particles) { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); }
             
-            requestAnimationFrame(gameLoop);
+            ctx.globalAlpha = 1.0; ctx.restore(); drawMinimap(); requestAnimationFrame(gameLoop);
         }
     </script>
 </body>
