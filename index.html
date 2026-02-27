@@ -3,549 +3,614 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RIVALS 3D: THE ULTIMATE 1v1</title>
+    <title>RIVALS 2D: TOP-DOWN TACTICS</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         /* =========================================
            USER INTERFACE & CSS STYLING
            ========================================= */
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #050505; overflow: hidden; font-family: 'Courier New', Courier, monospace; user-select: none; }
         
-        /* The Crosshair */
-        #crosshair-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; display: flex; justify-content: center; align-items: center; }
-        #crosshair-dot { width: 6px; height: 6px; background: #0f0; border-radius: 50%; }
-        #hitmarker { position: absolute; color: red; font-size: 24px; font-weight: bold; display: none; font-family: sans-serif; transform: rotate(45deg); }
+        canvas { display: block; }
+        
+        /* Custom Cursor for aiming */
+        body { cursor: crosshair; }
 
         /* Lobby Screen */
-        #lobby { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #050510 0%, #1a0b2e 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: #fff; text-align: center; }
-        h1 { font-size: 48px; color: #00ffff; text-shadow: 0 0 10px #00ffff; margin-bottom: 10px; }
-        .box { background: rgba(0,0,0,0.6); padding: 30px; border: 2px solid #00ffff; border-radius: 10px; margin: 15px; width: 400px; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); }
-        .code-display { font-size: 32px; color: #ff00ff; font-weight: bold; letter-spacing: 5px; margin: 10px 0; }
-        input { background: #111; border: 2px solid #ff00ff; color: #fff; padding: 15px; font-size: 18px; width: 80%; text-align: center; text-transform: uppercase; margin-bottom: 15px; outline: none; }
-        button { background: #00ffff; color: #000; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; text-transform: uppercase; width: 90%; }
-        button:hover { background: #ff00ff; color: #fff; transform: scale(1.05); }
+        #lobby { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a0b2e 0%, #000 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: #fff; text-align: center; }
+        h1 { font-size: 64px; color: #00ffff; text-shadow: 0 0 20px #00ffff, 0 0 40px #0088ff; margin-bottom: 5px; letter-spacing: 5px; }
+        h2 { font-size: 20px; color: #ff00ff; letter-spacing: 2px; margin-bottom: 40px; }
+        .box { background: rgba(0,0,0,0.8); padding: 40px; border: 2px solid #00ffff; border-radius: 15px; margin: 15px; width: 450px; box-shadow: 0 0 30px rgba(0, 255, 255, 0.1); position: relative; overflow: hidden; }
+        .box::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, transparent, rgba(0,255,255,0.1), transparent); transform: skewX(-20deg); animation: shine 3s infinite; }
+        @keyframes shine { 100% { left: 200%; } }
+        
+        .code-display { font-size: 40px; color: #ff00ff; font-weight: bold; letter-spacing: 10px; margin: 20px 0; text-shadow: 0 0 10px #ff00ff; }
+        input { background: #0a0a0a; border: 2px solid #ff00ff; color: #fff; padding: 15px; font-size: 24px; width: 80%; text-align: center; text-transform: uppercase; margin-bottom: 20px; outline: none; transition: 0.3s; }
+        input:focus { border-color: #00ffff; box-shadow: 0 0 15px #00ffff; }
+        button { background: #00ffff; color: #000; border: none; padding: 20px 40px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; text-transform: uppercase; width: 90%; letter-spacing: 2px; }
+        button:hover { background: #ff00ff; color: #fff; transform: scale(1.05); box-shadow: 0 0 20px #ff00ff; }
 
         /* Game HUD */
         #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; }
-        .hud-panel { position: absolute; background: rgba(0,0,0,0.5); padding: 15px; border: 1px solid #333; }
-        #health-bar-container { bottom: 30px; left: 30px; width: 300px; height: 30px; background: #222; border: 2px solid #555; position: absolute; }
-        #health-bar { width: 100%; height: 100%; background: #0f0; transition: width 0.1s, background 0.2s; }
-        #health-text { position: absolute; top: 5px; left: 10px; font-weight: bold; color: white; text-shadow: 1px 1px 0 #000; }
         
-        #scoreboard { top: 20px; left: 50%; transform: translateX(-50%); font-size: 24px; font-weight: bold; color: white; text-align: center; display: flex; gap: 20px; background: rgba(0,0,0,0.7); padding: 10px 30px; border-bottom: 3px solid #ff00ff; }
-        .score-blue { color: #00ffff; }
-        .score-red { color: #ff0055; }
+        #health-container { position: absolute; bottom: 40px; left: 40px; width: 400px; height: 30px; background: rgba(0,0,0,0.8); border: 3px solid #333; transform: skewX(-10deg); }
+        #health-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #00ff00, #00aa00); transition: width 0.15s ease-out, background 0.2s; }
+        #health-text { position: absolute; top: 2px; left: 15px; font-size: 22px; font-weight: bold; color: white; text-shadow: 2px 2px 0 #000; font-style: italic; }
         
-        #killfeed { top: 20px; right: 20px; text-align: right; color: white; font-size: 14px; }
+        #scoreboard { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); padding: 15px 40px; border: 2px solid #555; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .score-block { text-align: center; margin: 0 30px; }
+        .score-label { font-size: 14px; color: #aaa; margin-bottom: 5px; letter-spacing: 2px; }
+        .score-num { font-size: 48px; font-weight: bold; text-shadow: 0 0 10px currentColor; }
+        .blue { color: #00ffff; }
+        .red { color: #ff0055; }
+        .vs { font-size: 24px; color: #555; font-style: italic; }
         
-        /* Action Notifications */
-        #announcer { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: bold; color: #ff00ff; text-shadow: 0 0 10px #ff00ff; display: none; text-align: center; }
+        #announcer { position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%); font-size: 64px; font-weight: bold; color: #ff00ff; text-shadow: 0 0 20px #ff00ff, 4px 4px 0 #000; display: none; text-align: center; white-space: nowrap; }
+        
+        /* Hit & Damage Overlays */
+        #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 50%, rgba(255,0,0,0.4) 100%); opacity: 0; transition: opacity 0.1s; z-index: 5; pointer-events: none; }
+        #hitmarker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg); color: white; font-size: 30px; font-family: sans-serif; font-weight: bold; text-shadow: 0 0 5px red; opacity: 0; transition: opacity 0.1s; z-index: 20; }
     </style>
 </head>
 <body>
 
     <div id="lobby">
-        <h1>RIVALS OS v3.0</h1>
-        <p>1v1 TACTICAL ARENA</p>
+        <h1>RIVALS 2D</h1>
+        <h2>TOP-DOWN TACTICAL ENGINE</h2>
         
         <div class="box">
-            <h3>HOST A MATCH</h3>
-            <p>SEND THIS CODE TO YOUR RIVAL:</p>
-            <div class="code-display" id="my-id">LOADING...</div>
-            <div style="font-size: 12px; color: #888;">WAITING FOR CONNECTION...</div>
+            <h3 style="margin-top:0;">HOST A MATCH</h3>
+            <p style="color:#aaa;">SEND THIS CODE TO YOUR RIVAL:</p>
+            <div class="code-display" id="my-id">...</div>
+            <div style="font-size: 14px; color: #888; margin-top: 10px;">WAITING FOR OPPONENT...</div>
         </div>
 
         <div class="box">
-            <h3>JOIN A MATCH</h3>
-            <input type="text" id="join-input" placeholder="ENTER 5-LETTER CODE" maxlength="5">
-            <button id="join-btn">CONNECT TO SERVER</button>
+            <h3 style="margin-top:0;">JOIN A MATCH</h3>
+            <input type="text" id="join-input" placeholder="ENTER CODE" maxlength="5">
+            <button id="join-btn">CONNECT & FIGHT</button>
         </div>
     </div>
 
     <div id="hud">
-        <div id="scoreboard">
-            <div>YOU: <span id="score-you" class="score-blue">0</span></div>
-            <div>|</div>
-            <div>ENEMY: <span id="score-enemy" class="score-red">0</span></div>
-        </div>
-        
-        <div id="killfeed"></div>
+        <div id="damage-overlay"></div>
+        <div id="hitmarker">+</div>
 
-        <div id="health-bar-container">
+        <div id="scoreboard">
+            <div class="score-block">
+                <div class="score-label">YOU</div>
+                <div class="score-num blue" id="score-you">0</div>
+            </div>
+            <div class="vs">FIRST TO 5</div>
+            <div class="score-block">
+                <div class="score-label">ENEMY</div>
+                <div class="score-num red" id="score-enemy">0</div>
+            </div>
+        </div>
+
+        <div id="health-container">
             <div id="health-bar"></div>
             <div id="health-text">100 / 100</div>
         </div>
         
-        <div id="announcer">HEADSHOT!</div>
+        <div id="announcer">FIGHT!</div>
     </div>
 
-    <div id="crosshair-container">
-        <div id="crosshair-dot"></div>
-        <div id="hitmarker">+</div>
-    </div>
+    <canvas id="gameCanvas"></canvas>
 
-    <script type="importmap">
-        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-
+    <script>
         /* =====================================================================
-           PART 1: GAME STATE & VARIABLES
+           PART 1: GAME CONSTANTS & STATE
            ===================================================================== */
-        let myHp = 100;
-        let myKills = 0;
-        let enemyKills = 0;
-        const maxHp = 100;
-        const winScore = 5;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
         
-        let isDead = false;
-        let canShoot = true;
-        let isDashing = false;
-        
-        // Physics variables
-        const gravity = -30.0;
-        let velocity = new THREE.Vector3();
-        let direction = new THREE.Vector3();
-        let onObject = false;
-        const speedMultiplier = 60.0;
-        const dashSpeed = 150.0;
+        // Resize canvas to fill screen
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
 
-        // Arrays to hold map objects for collision
-        const collidableObjects = [];
-
-        /* =====================================================================
-           PART 2: NETWORKING (PEER.JS)
-           ===================================================================== */
-        // Generate a simple 5-letter code for easier joining
-        const makeId = () => {
-            let res = '';
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            for(let i=0; i<5; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
-            return res;
+        // Game State
+        const STATE = {
+            isPlaying: false,
+            myHp: 100, maxHp: 100,
+            myKills: 0, enemyKills: 0, winScore: 5,
+            isDead: false,
+            canShoot: true,
+            fireRate: 150, // ms between shots
+            screenShake: 0
         };
-        const myRoomCode = makeId();
 
-        const peer = new Peer('RIVALS-' + myRoomCode);
-        let conn;
+        // Network State
+        const NET = {
+            peer: null, conn: null, code: '',
+            isHost: false, lastSyncTime: 0
+        };
 
-        peer.on('open', (id) => { 
-            document.getElementById('my-id').innerText = myRoomCode; 
+        // Generate 5 letter code
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        for(let i=0; i<5; i++) NET.code += chars.charAt(Math.floor(Math.random() * chars.length));
+
+        /* =====================================================================
+           PART 2: MAP, ENTITIES, & PHYSICS ENGINE
+           ===================================================================== */
+        const MAP_SIZE = 2500;
+        const TILE_SIZE = 100;
+        
+        // The Map (Walls)
+        const walls = [];
+        function addWall(x, y, w, h) { walls.push({ x, y, w, h }); }
+        
+        // Map Borders
+        addWall(0, 0, MAP_SIZE, 50); // Top
+        addWall(0, MAP_SIZE-50, MAP_SIZE, 50); // Bottom
+        addWall(0, 0, 50, MAP_SIZE); // Left
+        addWall(MAP_SIZE-50, 0, 50, MAP_SIZE); // Right
+
+        // Inner Arena Cover
+        addWall(500, 500, 300, 100);
+        addWall(1700, 500, 300, 100);
+        addWall(500, 1900, 300, 100);
+        addWall(1700, 1900, 300, 100);
+        addWall(1000, 1000, 500, 500); // Massive center block
+        addWall(400, 1200, 100, 400);
+        addWall(2000, 900, 100, 400);
+
+        // Player Entities
+        const player = {
+            x: 200, y: 200, size: 40, color: '#00ffff',
+            vx: 0, vy: 0, speed: 400, dashSpeed: 1200,
+            angle: 0, isDashing: false
+        };
+
+        const enemy = {
+            x: -1000, y: -1000, size: 40, color: '#ff0055', angle: 0
+        };
+
+        // Projectiles & Particles
+        let bullets = [];
+        let particles = [];
+
+        // Camera
+        const camera = { x: 0, y: 0 };
+
+        // Input Tracking
+        const keys = { w: false, a: false, s: false, d: false, shift: false };
+        const mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false };
+
+        /* =====================================================================
+           PART 3: NETWORKING (PEER.JS)
+           ===================================================================== */
+        NET.peer = new Peer('RIV2D-' + NET.code);
+
+        NET.peer.on('open', id => { document.getElementById('my-id').innerText = NET.code; });
+
+        // On Receive Connection
+        NET.peer.on('connection', c => {
+            NET.conn = c; NET.isHost = true;
+            setupNetwork();
+            startGame();
         });
 
-        // When someone joins your code
-        peer.on('connection', (c) => {
-            conn = c;
-            setupMultiplayer();
-            startMatch();
-        });
-
-        // When you join someone else's code
+        // On Join
         document.getElementById('join-btn').onclick = () => {
-            const code = document.getElementById('join-input').value.toUpperCase();
-            if(code.length !== 5) return alert("Code must be 5 letters.");
-            conn = peer.connect('RIVALS-' + code);
-            setupMultiplayer();
-            startMatch();
+            const inputCode = document.getElementById('join-input').value.toUpperCase();
+            if(inputCode.length !== 5) return alert("CODE MUST BE 5 LETTERS");
+            NET.conn = NET.peer.connect('RIV2D-' + inputCode);
+            NET.isHost = false;
+            setupNetwork();
+            startGame();
         };
 
-        function setupMultiplayer() {
-            conn.on('data', (data) => {
-                // Enemy moved
+        function setupNetwork() {
+            NET.conn.on('data', data => {
+                // Enemy Movement Sync
                 if (data.type === 'move') {
-                    opponent.position.set(data.x, data.y, data.z);
-                    opponent.rotation.y = data.ry;
+                    enemy.x = data.x;
+                    enemy.y = data.y;
+                    enemy.angle = data.angle;
                 }
-                // Enemy shot their gun
+                // Enemy Fired a Bullet
                 if (data.type === 'shoot') {
-                    createBulletTracer(opponent.position, data.targetX, data.targetY, data.targetZ);
-                    playSound("shoot");
+                    spawnBullet(data.bx, data.by, data.vx, data.vy, false);
+                    STATE.screenShake = 5; // Small shake when enemy shoots near you
                 }
-                // Enemy hit you!
+                // Enemy Hit You
                 if (data.type === 'hit') {
-                    takeDamage(data.amount);
+                    takeDamage(data.dmg);
                 }
-                // Enemy died, you get a point!
+                // Enemy Died
                 if (data.type === 'death') {
-                    myKills++;
-                    updateScoreboard();
-                    announce("YOU KILLED THE ENEMY!");
-                    if(myKills >= winScore) announce("VICTORY! YOU WIN!", 5000);
+                    STATE.myKills++;
+                    updateScore();
+                    announce("ENEMY ELIMINATED!");
+                    createExplosion(enemy.x, enemy.y, enemy.color);
+                    if(STATE.myKills >= STATE.winScore) announce("VICTORY", 5000);
                 }
             });
         }
 
         /* =====================================================================
-           PART 3: 3D ENGINE SETUP (THREE.JS)
+           PART 4: INPUT & CONTROLS
            ===================================================================== */
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0a1a); // Dark moody sky
-        scene.fog = new THREE.Fog(0x0a0a1a, 10, 100);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.rotation.order = 'YXZ'; // Important for FPS camera
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true; // Enable shadows for realism
-        document.body.appendChild(renderer.domElement);
-
-        // --- LIGHTING ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-        scene.add(ambientLight);
-
-        const moonLight = new THREE.DirectionalLight(0x8888ff, 1.5);
-        moonLight.position.set(50, 100, 20);
-        moonLight.castShadow = true;
-        scene.add(moonLight);
-
-        // --- OPPONENT MODEL (Red Box with a "Head") ---
-        const opponent = new THREE.Group();
-        // Body
-        const oppBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2, 1.5), new THREE.MeshStandardMaterial({ color: 0xff0055 }));
-        oppBody.position.y = 1;
-        oppBody.castShadow = true;
-        opponent.add(oppBody);
-        // Head
-        const oppHead = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-        oppHead.position.y = 2.4;
-        oppHead.castShadow = true;
-        opponent.add(oppHead);
-        
-        scene.add(opponent);
-
-        /* =====================================================================
-           PART 4: MAP GENERATION & COLLISIONS
-           ===================================================================== */
-        // Floor
-        const floorGeo = new THREE.PlaneGeometry(200, 200);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
-        scene.add(floor);
-
-        // Function to build walls/crates
-        function createBlock(x, y, z, w, h, d, color=0x333344) {
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mat = new THREE.MeshStandardMaterial({ color: color });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.position.set(x, y, z);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            scene.add(mesh);
-            collidableObjects.push(mesh); // Add to collision array
-        }
-
-        // Build the Arena
-        // Outer Walls
-        createBlock(0, 10, -50, 100, 20, 2); // North
-        createBlock(0, 10, 50, 100, 20, 2);  // South
-        createBlock(-50, 10, 0, 2, 20, 100); // West
-        createBlock(50, 10, 0, 2, 20, 100);  // East
-
-        // Cover Blocks (Symmetrical Map)
-        createBlock(-15, 3, -15, 6, 6, 6);
-        createBlock(15, 3, 15, 6, 6, 6);
-        createBlock(15, 3, -15, 6, 6, 6);
-        createBlock(-15, 3, 15, 6, 6, 6);
-        
-        // Center Pillar
-        createBlock(0, 5, 0, 4, 10, 4, 0x00ffff);
-
-        // Raycasters for Physics
-        const downRaycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 2);
-        const forwardRaycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, 0, -1), 0, 1.5);
-
-        /* =====================================================================
-           PART 5: MOVEMENT & CONTROLS
-           ===================================================================== */
-        let keys = { w: false, a: false, s: false, d: false, space: false, shift: false };
-
-        document.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase();
-            if (keys.hasOwnProperty(key) || key === ' ') {
-                if(key === ' ') keys.space = true;
-                else if (e.shiftKey) { keys.shift = true; dash(); }
-                else keys[key] = true;
-            }
+        window.addEventListener('keydown', e => {
+            const k = e.key.toLowerCase();
+            if (keys.hasOwnProperty(k)) keys[k] = true;
+            if (e.key === 'Shift' && !player.isDashing && !STATE.isDead) dash();
         });
 
-        document.addEventListener('keyup', (e) => {
-            const key = e.key.toLowerCase();
-            if (keys.hasOwnProperty(key) || key === ' ') {
-                if(key === ' ') keys.space = false;
-                else if(e.key === 'Shift') keys.shift = false;
-                else keys[key] = false;
-            }
+        window.addEventListener('keyup', e => {
+            const k = e.key.toLowerCase();
+            if (keys.hasOwnProperty(k)) keys[k] = false;
         });
 
-        // Mouse Look
-        document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement === document.body && !isDead) {
-                camera.rotation.y -= e.movementX * 0.002;
-                camera.rotation.x -= e.movementY * 0.002;
-                // Clamp looking up and down
-                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
-            }
+        window.addEventListener('mousemove', e => {
+            mouse.x = e.clientX; mouse.y = e.clientY;
+            // Convert screen mouse pos to world pos
+            mouse.worldX = mouse.x + camera.x - canvas.width/2;
+            mouse.worldY = mouse.y + camera.y - canvas.height/2;
         });
 
-        // Dash Mechanic
+        window.addEventListener('mousedown', () => { mouse.down = true; });
+        window.addEventListener('mouseup', () => { mouse.down = false; });
+
         function dash() {
-            if(isDashing || isDead) return;
-            isDashing = true;
-            setTimeout(() => isDashing = false, 1000); // 1 sec cooldown
+            player.isDashing = true;
+            // Determine direction vector based on keys
+            let dx = 0, dy = 0;
+            if(keys.w) dy -= 1; if(keys.s) dy += 1;
+            if(keys.a) dx -= 1; if(keys.d) dx += 1;
             
-            // Apply massive burst of velocity in current movement direction
-            if (keys.w) velocity.z -= dashSpeed;
-            if (keys.s) velocity.z += dashSpeed;
-            if (keys.a) velocity.x -= dashSpeed;
-            if (keys.d) velocity.x += dashSpeed;
+            // If standing still, dash towards mouse
+            if(dx === 0 && dy === 0) {
+                dx = Math.cos(player.angle);
+                dy = Math.sin(player.angle);
+            } else {
+                // Normalize
+                const len = Math.hypot(dx, dy);
+                dx /= len; dy /= len;
+            }
+
+            player.vx = dx * player.dashSpeed;
+            player.vy = dy * player.dashSpeed;
+
+            // Cooldown & End dash
+            setTimeout(() => { player.isDashing = false; }, 150);
         }
 
         /* =====================================================================
-           PART 6: COMBAT & SHOOTING
+           PART 5: GAME LOGIC & COMBAT
            ===================================================================== */
-        const shootRaycaster = new THREE.Raycaster();
-
-        document.addEventListener('mousedown', () => {
-            if (document.pointerLockElement !== document.body) {
-                // First click locks the mouse
-                document.body.requestPointerLock();
-                return;
-            }
-            if (conn && conn.open && canShoot && !isDead) {
-                fireWeapon();
-            }
-        });
-
-        function fireWeapon() {
-            canShoot = false;
-            setTimeout(() => canShoot = true, 150); // Fire Rate (ms)
-
-            // Screen Recoil
-            camera.rotation.x += 0.02; 
-
-            shootRaycaster.setFromCamera(new THREE.Vector2(0,0), camera);
-            
-            // Check if we hit the enemy
-            const intersects = shootRaycaster.intersectObject(opponent, true);
-            
-            let hitPoint = null;
-
-            if (intersects.length > 0) {
-                hitPoint = intersects[0].point;
-                showHitmarker();
-                
-                // Determine headshot vs body shot based on height of impact
-                let damage = 25;
-                if (hitPoint.y > 2.0) { damage = 50; } // Headshot bonus
-                
-                conn.send({ type: 'hit', amount: damage });
-            } else {
-                // If miss, draw tracer into the distance
-                hitPoint = new THREE.Vector3();
-                shootRaycaster.ray.at(50, hitPoint);
-            }
-
-            // Draw Tracer locally
-            createBulletTracer(camera.position, hitPoint.x, hitPoint.y, hitPoint.z);
-            
-            // Tell enemy we shot so they see tracer
-            conn.send({ type: 'shoot', targetX: hitPoint.x, targetY: hitPoint.y, targetZ: hitPoint.z });
+        function spawnBullet(x, y, vx, vy, isMine) {
+            bullets.push({ x, y, vx, vy, isMine, life: 100, radius: 5 });
         }
 
-        function createBulletTracer(start, tx, ty, tz) {
-            const material = new THREE.LineBasicMaterial({ color: 0xffff00 });
-            const points = [];
-            points.push(new THREE.Vector3(start.x, start.y - 0.2, start.z)); // Slightly below camera
-            points.push(new THREE.Vector3(tx, ty, tz));
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(geometry, material);
-            scene.add(line);
-            
-            // Remove tracer after split second
-            setTimeout(() => scene.remove(line), 50);
-        }
+        function shoot() {
+            if (!STATE.canShoot || STATE.isDead) return;
+            STATE.canShoot = false;
+            setTimeout(() => STATE.canShoot = true, STATE.fireRate);
 
-        function showHitmarker() {
-            const marker = document.getElementById('hitmarker');
-            marker.style.display = 'block';
-            setTimeout(() => marker.style.display = 'none', 100);
+            STATE.screenShake = 10;
+
+            // Calculate bullet velocity based on angle
+            const speed = 1500;
+            const bx = player.x;
+            const by = player.y;
+            const bvx = Math.cos(player.angle) * speed;
+            const bvy = Math.sin(player.angle) * speed;
+
+            spawnBullet(bx, by, bvx, bvy, true);
+            
+            // Tell enemy we shot
+            if(NET.conn && NET.conn.open) {
+                NET.conn.send({ type: 'shoot', bx, by, vx: bvx, vy: bvy });
+            }
         }
 
         function takeDamage(amount) {
-            if(isDead) return;
+            if (STATE.isDead) return;
+            STATE.myHp -= amount;
             
-            myHp -= amount;
-            
-            // Update UI
+            // Visual feedback
+            const overlay = document.getElementById('damage-overlay');
+            overlay.style.opacity = 1;
+            setTimeout(() => overlay.style.opacity = 0, 150);
+            STATE.screenShake = 20;
+
+            // Update Health Bar UI
             const bar = document.getElementById('health-bar');
-            bar.style.width = Math.max(0, (myHp / maxHp) * 100) + "%";
-            document.getElementById('health-text').innerText = `${Math.max(0, myHp)} / ${maxHp}`;
-            
-            // Color changing health bar
-            if(myHp <= 30) bar.style.background = "#ff0000";
-            else bar.style.background = "#0f0";
+            bar.style.width = Math.max(0, (STATE.myHp / STATE.maxHp) * 100) + "%";
+            document.getElementById('health-text').innerText = `${Math.max(0, STATE.myHp)} / ${STATE.maxHp}`;
+            if(STATE.myHp <= 30) bar.style.background = "linear-gradient(90deg, #ff0000, #aa0000)";
+            else bar.style.background = "linear-gradient(90deg, #00ff00, #00aa00)";
 
-            // Screen flash red
-            document.getElementById('hud').style.backgroundColor = "rgba(255, 0, 0, 0.3)";
-            setTimeout(() => document.getElementById('hud').style.backgroundColor = "transparent", 100);
-
-            if (myHp <= 0) {
-                die();
-            }
+            if (STATE.myHp <= 0) die();
         }
 
         function die() {
-            isDead = true;
-            enemyKills++;
-            updateScoreboard();
-            announce("YOU DIED", 2000);
+            STATE.isDead = true;
+            STATE.enemyKills++;
+            updateScore();
+            announce("YOU DIED");
+            createExplosion(player.x, player.y, player.color);
             
-            // Tell enemy we died
-            conn.send({ type: 'death' });
+            if(NET.conn) NET.conn.send({ type: 'death' });
             
-            // Fall over animation
-            camera.position.y = 0.5;
-            camera.rotation.z = Math.PI / 4;
-
             setTimeout(respawn, 3000);
         }
 
         function respawn() {
-            myHp = maxHp;
-            isDead = false;
+            STATE.isDead = false;
+            STATE.myHp = STATE.maxHp;
+            
+            // Find random spawn point far from center
+            player.x = Math.random() > 0.5 ? 200 : MAP_SIZE - 200;
+            player.y = Math.random() > 0.5 ? 200 : MAP_SIZE - 200;
             
             // Reset UI
             document.getElementById('health-bar').style.width = "100%";
-            document.getElementById('health-bar').style.background = "#0f0";
+            document.getElementById('health-bar').style.background = "linear-gradient(90deg, #00ff00, #00aa00)";
             document.getElementById('health-text').innerText = "100 / 100";
-            
-            // Random spawn point away from center
-            const spawnX = (Math.random() > 0.5 ? 1 : -1) * (20 + Math.random() * 20);
-            const spawnZ = (Math.random() > 0.5 ? 1 : -1) * (20 + Math.random() * 20);
-            
-            camera.position.set(spawnX, 2, spawnZ);
-            camera.rotation.set(0, 0, 0);
-            velocity.set(0,0,0);
+        }
+
+        // Particle System
+        function createExplosion(x, y, color) {
+            for(let i=0; i<30; i++) {
+                particles.push({
+                    x, y, 
+                    vx: (Math.random() - 0.5) * 800, 
+                    vy: (Math.random() - 0.5) * 800,
+                    life: 1.0, color, size: Math.random() * 6 + 2
+                });
+            }
+        }
+
+        // Simple AABB Collision Check
+        function checkCollision(rect1, rect2) {
+            return (rect1.x < rect2.x + rect2.w &&
+                    rect1.x + rect1.w > rect2.x &&
+                    rect1.y < rect2.y + rect2.h &&
+                    rect1.y + rect1.h > rect2.y);
         }
 
         /* =====================================================================
-           PART 7: UI & UTILITIES
+           PART 6: THE GAME LOOP (UPDATE & RENDER)
            ===================================================================== */
-        function startMatch() {
+        let lastTime = performance.now();
+
+        function startGame() {
             document.getElementById('lobby').style.display = 'none';
             document.getElementById('hud').style.display = 'block';
-            document.body.requestPointerLock();
-            
-            // Set initial position
+            STATE.isPlaying = true;
             respawn();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateScore() {
+            document.getElementById('score-you').innerText = STATE.myKills;
+            document.getElementById('score-enemy').innerText = STATE.enemyKills;
+        }
+
+        function announce(txt, time=2000) {
+            const el = document.getElementById('announcer');
+            el.innerText = txt; el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', time);
+        }
+
+        function gameLoop(timestamp) {
+            if(!STATE.isPlaying) return;
             
-            // Start game loop
-            prevTime = performance.now();
-            animate();
-        }
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
 
-        function updateScoreboard() {
-            document.getElementById('score-you').innerText = myKills;
-            document.getElementById('score-enemy').innerText = enemyKills;
-        }
+            // --- 1. PLAYER UPDATE ---
+            if (!STATE.isDead) {
+                // Aiming
+                mouse.worldX = mouse.x + camera.x - canvas.width/2;
+                mouse.worldY = mouse.y + camera.y - canvas.height/2;
+                player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
 
-        function announce(text, duration = 2000) {
-            const ann = document.getElementById('announcer');
-            ann.innerText = text;
-            ann.style.display = 'block';
-            setTimeout(() => ann.style.display = 'none', duration);
-        }
+                // Shooting
+                if (mouse.down) shoot();
 
-        function playSound(type) {
-            // Placeholder for actual audio implementation
-            // You can add HTML5 Audio here later!
-        }
+                // Movement Logic
+                if (!player.isDashing) {
+                    let dx = 0, dy = 0;
+                    if(keys.w) dy -= 1; if(keys.s) dy += 1;
+                    if(keys.a) dx -= 1; if(keys.d) dx += 1;
+                    
+                    if(dx !== 0 && dy !== 0) {
+                        const len = Math.hypot(dx, dy);
+                        dx /= len; dy /= len;
+                    }
+                    
+                    // Friction/Acceleration smooth out
+                    player.vx = player.vx * 0.8 + (dx * player.speed) * 0.2;
+                    player.vy = player.vy * 0.8 + (dy * player.speed) * 0.2;
+                }
 
-        /* =====================================================================
-           PART 8: THE MAIN GAME LOOP (PHYSICS & RENDERING)
-           ===================================================================== */
-        let prevTime = performance.now();
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const time = performance.now();
-            const delta = (time - prevTime) / 1000;
-
-            if (document.pointerLockElement === document.body && !isDead) {
-                
-                // --- PHYSICS & COLLISION ---
-                // Add Friction
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 9.8 * 10.0 * delta; // Gravity
-
-                direction.z = Number(keys.w) - Number(keys.s);
-                direction.x = Number(keys.d) - Number(keys.a);
-                direction.normalize(); // Ensure diagonal movement isn't faster
-
-                if (keys.w || keys.s) velocity.z -= direction.z * speedMultiplier * delta;
-                if (keys.a || keys.d) velocity.x -= direction.x * speedMultiplier * delta;
-
-                // Wall Collision Detection (Very Basic Forward Raycast)
-                let moveDir = new THREE.Vector3(velocity.x, 0, velocity.z).normalize();
-                forwardRaycaster.set(camera.position, moveDir);
-                // Rotate raycaster based on camera view
-                let camDir = new THREE.Vector3();
-                camera.getWorldDirection(camDir);
-                camDir.y = 0; camDir.normalize();
-                
-                // Floor Collision Detection
-                downRaycaster.ray.origin.copy(camera.position);
-                const floorIntersects = downRaycaster.intersectObject(floor);
-                onObject = floorIntersects.length > 0;
-
-                if (onObject) {
-                    velocity.y = Math.max(0, velocity.y);
-                    // Jump Logic
-                    if (keys.space) {
-                        velocity.y = 40.0;
+                // Physics: Wall Sliding X Axis
+                player.x += player.vx * dt;
+                let pRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
+                for(let w of walls) {
+                    if(checkCollision(pRect, w)) {
+                        // Push out
+                        if(player.vx > 0) player.x = w.x - player.size/2;
+                        else player.x = w.x + w.w + player.size/2;
+                        player.vx = 0;
                     }
                 }
 
-                // Apply velocities to camera position
-                camera.translateX(-velocity.x * delta);
-                camera.position.y += velocity.y * delta;
-                camera.translateZ(velocity.z * delta);
-
-                // Prevent falling through map completely
-                if (camera.position.y < 2) {
-                    camera.position.y = 2;
-                    velocity.y = 0;
+                // Physics: Wall Sliding Y Axis
+                player.y += player.vy * dt;
+                pRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
+                for(let w of walls) {
+                    if(checkCollision(pRect, w)) {
+                        // Push out
+                        if(player.vy > 0) player.y = w.y - player.size/2;
+                        else player.y = w.y + w.h + player.size/2;
+                        player.vy = 0;
+                    }
                 }
 
-                // --- NETWORKING SYNC ---
-                if (conn && conn.open) {
-                    conn.send({
-                        type: 'move',
-                        x: camera.position.x,
-                        y: camera.position.y - 1, // Offset so enemy model is on ground
-                        z: camera.position.z,
-                        ry: camera.rotation.y
-                    });
+                // Send Network Data (20 times per second)
+                if (NET.conn && timestamp - NET.lastSyncTime > 50) {
+                    NET.conn.send({ type: 'move', x: player.x, y: player.y, angle: player.angle });
+                    NET.lastSyncTime = timestamp;
                 }
+            } else {
+                player.vx = 0; player.vy = 0;
             }
 
-            renderer.render(scene, camera);
-            prevTime = time;
+            // --- 2. BULLET UPDATE ---
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+                b.life--;
+
+                let destroyed = false;
+                
+                // Wall Collision
+                for(let w of walls) {
+                    if(b.x > w.x && b.x < w.x+w.w && b.y > w.y && b.y < w.y+w.h) {
+                        createExplosion(b.x, b.y, '#ffff00'); // Sparks
+                        destroyed = true; break;
+                    }
+                }
+
+                // Player Collision (Did MY bullet hit ENEMY?)
+                if (b.isMine && !destroyed) {
+                    let dx = b.x - enemy.x;
+                    let dy = b.y - enemy.y;
+                    if (Math.hypot(dx, dy) < enemy.size/2 + b.radius) {
+                        createExplosion(b.x, b.y, '#ff0000'); // Blood/Sparks
+                        
+                        // Show Hitmarker
+                        const hm = document.getElementById('hitmarker');
+                        hm.style.opacity = 1;
+                        setTimeout(() => hm.style.opacity = 0, 100);
+                        
+                        // Send damage packet
+                        if(NET.conn) NET.conn.send({ type: 'hit', dmg: 25 });
+                        destroyed = true;
+                    }
+                }
+
+                if (destroyed || b.life <= 0) bullets.splice(i, 1);
+            }
+
+            // --- 3. PARTICLE UPDATE ---
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vx *= 0.9; // Friction
+                p.vy *= 0.9;
+                p.life -= dt * 2;
+                if(p.life <= 0) particles.splice(i, 1);
+            }
+
+            // --- 4. CAMERA UPDATE ---
+            // Smooth follow player
+            let targetCamX = player.x;
+            let targetCamY = player.y;
+            camera.x += (targetCamX - camera.x) * 0.1;
+            camera.y += (targetCamY - camera.y) * 0.1;
+
+            // Screen Shake Decay
+            if(STATE.screenShake > 0) STATE.screenShake *= 0.9;
+            if(STATE.screenShake < 0.5) STATE.screenShake = 0;
+
+            // --- 5. RENDER ---
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            
+            // Apply Camera Translation & Shake
+            let shakeX = (Math.random() - 0.5) * STATE.screenShake;
+            let shakeY = (Math.random() - 0.5) * STATE.screenShake;
+            ctx.translate(canvas.width/2 - camera.x + shakeX, canvas.height/2 - camera.y + shakeY);
+
+            // Draw Floor Grid (for sense of speed)
+            ctx.strokeStyle = '#111';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for(let x = 0; x <= MAP_SIZE; x += TILE_SIZE) { ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); }
+            for(let y = 0; y <= MAP_SIZE; y += TILE_SIZE) { ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, y); }
+            ctx.stroke();
+
+            // Draw Walls
+            ctx.fillStyle = '#1a1a2e';
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 3;
+            for(let w of walls) {
+                ctx.shadowColor = '#00ffff';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(w.x, w.y, w.w, w.h);
+                ctx.shadowBlur = 0;
+                ctx.strokeRect(w.x, w.y, w.w, w.h);
+            }
+
+            // Draw Enemy (If connected)
+            if (NET.conn) {
+                ctx.save();
+                ctx.translate(enemy.x, enemy.y);
+                ctx.rotate(enemy.angle);
+                // Draw Body
+                ctx.fillStyle = enemy.color;
+                ctx.shadowColor = enemy.color; ctx.shadowBlur = 15;
+                ctx.fillRect(-enemy.size/2, -enemy.size/2, enemy.size, enemy.size);
+                // Draw Gun barrel
+                ctx.fillStyle = '#aaa'; ctx.shadowBlur = 0;
+                ctx.fillRect(0, -5, enemy.size/2 + 15, 10);
+                ctx.restore();
+            }
+
+            // Draw Player
+            if (!STATE.isDead) {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                ctx.rotate(player.angle);
+                // Draw Dash Trail Effect
+                if(player.isDashing) {
+                    ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+                    ctx.fillRect(-player.size, -player.size/2, player.size, player.size);
+                }
+                // Body
+                ctx.fillStyle = player.color;
+                ctx.shadowColor = player.color; ctx.shadowBlur = 15;
+                ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
+                // Gun barrel
+                ctx.fillStyle = '#fff'; ctx.shadowBlur = 0;
+                ctx.fillRect(0, -5, player.size/2 + 15, 10);
+                ctx.restore();
+            }
+
+            // Draw Bullets
+            for(let b of bullets) {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
+                ctx.fillStyle = b.isMine ? '#00ffff' : '#ff0055';
+                ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            // Draw Particles
+            for(let p of particles) {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            }
+            ctx.globalAlpha = 1.0;
+
+            ctx.restore();
+            
+            // Loop!
+            requestAnimationFrame(gameLoop);
         }
-
-        // Handle Window Resize properly
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
     </script>
 </body>
 </html>
