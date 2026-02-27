@@ -3,326 +3,360 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RIVALS 2D: TOP-DOWN TACTICS</title>
+    <title>RIVALS 2D: ARSENAL UPDATE</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        /* =========================================
-           USER INTERFACE & CSS STYLING
-           ========================================= */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #050505; overflow: hidden; font-family: 'Courier New', Courier, monospace; user-select: none; }
-        
         canvas { display: block; }
-        
-        /* Custom Cursor for aiming */
         body { cursor: crosshair; }
 
-        /* Lobby Screen */
-        #lobby { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a0b2e 0%, #000 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: #fff; text-align: center; }
-        h1 { font-size: 64px; color: #00ffff; text-shadow: 0 0 20px #00ffff, 0 0 40px #0088ff; margin-bottom: 5px; letter-spacing: 5px; }
-        h2 { font-size: 20px; color: #ff00ff; letter-spacing: 2px; margin-bottom: 40px; }
-        .box { background: rgba(0,0,0,0.8); padding: 40px; border: 2px solid #00ffff; border-radius: 15px; margin: 15px; width: 450px; box-shadow: 0 0 30px rgba(0, 255, 255, 0.1); position: relative; overflow: hidden; }
-        .box::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, transparent, rgba(0,255,255,0.1), transparent); transform: skewX(-20deg); animation: shine 3s infinite; }
-        @keyframes shine { 100% { left: 200%; } }
+        /* LOBBY UI */
+        #lobby { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1a0b2e 0%, #000 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: #fff; text-align: center; overflow-y: auto; }
+        h1 { font-size: 64px; color: #00ffff; text-shadow: 0 0 20px #00ffff; margin-bottom: 5px; }
+        .box { background: rgba(0,0,0,0.8); padding: 30px; border: 2px solid #00ffff; border-radius: 10px; margin: 10px; width: 500px; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); }
+        .code-display { font-size: 36px; color: #ff00ff; font-weight: bold; letter-spacing: 8px; margin: 15px 0; }
+        input, select { background: #111; border: 2px solid #ff00ff; color: #fff; padding: 12px; font-size: 18px; width: 90%; text-align: center; margin-bottom: 15px; outline: none; font-family: inherit; }
+        button { background: #00ffff; color: #000; border: none; padding: 15px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 95%; margin-top: 10px; }
+        button:hover { background: #ff00ff; color: #fff; transform: scale(1.02); }
         
-        .code-display { font-size: 40px; color: #ff00ff; font-weight: bold; letter-spacing: 10px; margin: 20px 0; text-shadow: 0 0 10px #ff00ff; }
-        input { background: #0a0a0a; border: 2px solid #ff00ff; color: #fff; padding: 15px; font-size: 24px; width: 80%; text-align: center; text-transform: uppercase; margin-bottom: 20px; outline: none; transition: 0.3s; }
-        input:focus { border-color: #00ffff; box-shadow: 0 0 15px #00ffff; }
-        button { background: #00ffff; color: #000; border: none; padding: 20px 40px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; text-transform: uppercase; width: 90%; letter-spacing: 2px; }
-        button:hover { background: #ff00ff; color: #fff; transform: scale(1.05); box-shadow: 0 0 20px #ff00ff; }
-
-        /* Game HUD */
+        /* HUD UI */
         #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; }
+        #health-container { position: absolute; bottom: 30px; left: 30px; width: 350px; height: 35px; background: #111; border: 3px solid #333; }
+        #health-bar { width: 100%; height: 100%; background: #0f0; transition: width 0.1s; }
+        #health-text { position: absolute; top: 5px; left: 15px; font-size: 20px; font-weight: bold; color: white; text-shadow: 2px 2px 0 #000; }
+        #stance-text { position: absolute; bottom: 75px; left: 30px; font-size: 24px; color: #00ffff; font-weight: bold; text-shadow: 0 0 10px #00ffff; }
+        #weapon-text { position: absolute; bottom: 30px; right: 30px; font-size: 32px; color: #ff00ff; font-weight: bold; text-shadow: 0 0 10px #ff00ff; text-align: right; }
         
-        #health-container { position: absolute; bottom: 40px; left: 40px; width: 400px; height: 30px; background: rgba(0,0,0,0.8); border: 3px solid #333; transform: skewX(-10deg); }
-        #health-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #00ff00, #00aa00); transition: width 0.15s ease-out, background 0.2s; }
-        #health-text { position: absolute; top: 2px; left: 15px; font-size: 22px; font-weight: bold; color: white; text-shadow: 2px 2px 0 #000; font-style: italic; }
+        #scoreboard { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); padding: 10px 30px; border: 2px solid #555; }
+        .score-num { font-size: 40px; font-weight: bold; margin: 0 20px; }
+        .blue { color: #00ffff; text-shadow: 0 0 10px #00ffff; }
+        .red { color: #ff0055; text-shadow: 0 0 10px #ff0055; }
         
-        #scoreboard { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); padding: 15px 40px; border: 2px solid #555; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .score-block { text-align: center; margin: 0 30px; }
-        .score-label { font-size: 14px; color: #aaa; margin-bottom: 5px; letter-spacing: 2px; }
-        .score-num { font-size: 48px; font-weight: bold; text-shadow: 0 0 10px currentColor; }
-        .blue { color: #00ffff; }
-        .red { color: #ff0055; }
-        .vs { font-size: 24px; color: #555; font-style: italic; }
-        
-        #announcer { position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%); font-size: 64px; font-weight: bold; color: #ff00ff; text-shadow: 0 0 20px #ff00ff, 4px 4px 0 #000; display: none; text-align: center; white-space: nowrap; }
-        
-        /* Hit & Damage Overlays */
-        #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, transparent 50%, rgba(255,0,0,0.4) 100%); opacity: 0; transition: opacity 0.1s; z-index: 5; pointer-events: none; }
-        #hitmarker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg); color: white; font-size: 30px; font-family: sans-serif; font-weight: bold; text-shadow: 0 0 5px red; opacity: 0; transition: opacity 0.1s; z-index: 20; }
+        #announcer { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 70px; font-weight: bold; color: #ff00ff; text-shadow: 0 0 20px #ff00ff; display: none; text-align: center; }
+        #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,0,0,0.3); opacity: 0; transition: opacity 0.1s; z-index: 5; }
     </style>
 </head>
 <body>
 
     <div id="lobby">
-        <h1>RIVALS 2D</h1>
-        <h2>TOP-DOWN TACTICAL ENGINE</h2>
+        <h1>RIVALS 2D: APEX</h1>
         
         <div class="box">
-            <h3 style="margin-top:0;">HOST A MATCH</h3>
-            <p style="color:#aaa;">SEND THIS CODE TO YOUR RIVAL:</p>
-            <div class="code-display" id="my-id">...</div>
-            <div style="font-size: 14px; color: #888; margin-top: 10px;">WAITING FOR OPPONENT...</div>
+            <h3>SELECT YOUR WEAPON</h3>
+            <select id="weapon-select"></select>
         </div>
 
         <div class="box">
-            <h3 style="margin-top:0;">JOIN A MATCH</h3>
-            <input type="text" id="join-input" placeholder="ENTER CODE" maxlength="5">
-            <button id="join-btn">CONNECT & FIGHT</button>
+            <h3>HOST MATCH</h3>
+            <select id="map-select">
+                <option value="0">MAP: THE ARENA</option>
+                <option value="1">MAP: TIGHT CORRIDORS</option>
+                <option value="2">MAP: SNIPER'S FIELD</option>
+                <option value="3">MAP: THE MAZE</option>
+                <option value="4">MAP: CROSSROADS</option>
+            </select>
+            <div class="code-display" id="my-id">...</div>
+            <p style="color:#aaa; font-size: 12px;">SEND CODE TO RIVAL</p>
+        </div>
+
+        <div class="box">
+            <h3>JOIN MATCH</h3>
+            <input type="text" id="join-input" placeholder="ENTER 5-LETTER CODE" maxlength="5">
+            <button id="join-btn">CONNECT & PLAY</button>
         </div>
     </div>
 
     <div id="hud">
         <div id="damage-overlay"></div>
-        <div id="hitmarker">+</div>
-
         <div id="scoreboard">
-            <div class="score-block">
-                <div class="score-label">YOU</div>
-                <div class="score-num blue" id="score-you">0</div>
-            </div>
-            <div class="vs">FIRST TO 5</div>
-            <div class="score-block">
-                <div class="score-label">ENEMY</div>
-                <div class="score-num red" id="score-enemy">0</div>
-            </div>
+            <div class="score-num blue" id="score-you">0</div>
+            <div style="color: #fff;">VS</div>
+            <div class="score-num red" id="score-enemy">0</div>
         </div>
-
         <div id="health-container">
             <div id="health-bar"></div>
             <div id="health-text">100 / 100</div>
         </div>
-        
-        <div id="announcer">FIGHT!</div>
+        <div id="stance-text">STANDING</div>
+        <div id="weapon-text" id="hud-weapon">WEAPON</div>
+        <div id="announcer">MATCH START!</div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
     <script>
         /* =====================================================================
-           PART 1: GAME CONSTANTS & STATE
+           PART 1: THE 50 WEAPON ARSENAL
+           ===================================================================== */
+        const WEAPONS = [
+            // PISTOLS (1-10)
+            { name: "G18 Classic", type: "Pistol", fireRate: 200, damage: 15, speed: 1200, spread: 0.05, color: "#ffffaa", size: 4 },
+            { name: "Desert Eagle", type: "Pistol", fireRate: 600, damage: 45, speed: 1800, spread: 0.02, color: "#ffaa00", size: 6 },
+            { name: "M1911", type: "Pistol", fireRate: 300, damage: 25, speed: 1400, spread: 0.04, color: "#dddddd", size: 5 },
+            { name: "Revolver .357", type: "Pistol", fireRate: 500, damage: 40, speed: 1600, spread: 0.01, color: "#ff5500", size: 5 },
+            { name: "Silenced USP", type: "Pistol", fireRate: 250, damage: 18, speed: 1500, spread: 0.03, color: "#8888ff", size: 4 },
+            { name: "Dual Berettas", type: "Pistol", fireRate: 150, damage: 12, speed: 1100, spread: 0.08, color: "#ffffaa", size: 4 },
+            { name: "Machine Pistol", type: "Pistol", fireRate: 80, damage: 8, speed: 1000, spread: 0.12, color: "#ffcc00", size: 3 },
+            { name: "Heavy Handgun", type: "Pistol", fireRate: 700, damage: 55, speed: 2000, spread: 0.01, color: "#ff2200", size: 7 },
+            { name: "Burst Pistol", type: "Pistol", fireRate: 350, damage: 20, speed: 1300, spread: 0.06, color: "#ccffcc", size: 4 },
+            { name: "Pocket Sniper", type: "Pistol", fireRate: 1000, damage: 70, speed: 3000, spread: 0.00, color: "#ff00ff", size: 5 },
+            // SMGS (11-20)
+            { name: "MP5 Navy", type: "SMG", fireRate: 100, damage: 14, speed: 1400, spread: 0.07, color: "#ffff00", size: 4 },
+            { name: "Vector .45", type: "SMG", fireRate: 60, damage: 10, speed: 1500, spread: 0.06, color: "#ffaa00", size: 4 },
+            { name: "P90 Rush", type: "SMG", fireRate: 70, damage: 11, speed: 1300, spread: 0.09, color: "#ccccff", size: 4 },
+            { name: "MAC-10", type: "SMG", fireRate: 80, damage: 12, speed: 1100, spread: 0.12, color: "#ffccaa", size: 4 },
+            { name: "UMP-45", type: "SMG", fireRate: 150, damage: 18, speed: 1300, spread: 0.05, color: "#bbbbbb", size: 5 },
+            { name: "Bizon", type: "SMG", fireRate: 90, damage: 13, speed: 1200, spread: 0.08, color: "#aaaaaa", size: 4 },
+            { name: "MP7", type: "SMG", fireRate: 110, damage: 15, speed: 1400, spread: 0.06, color: "#ddffdd", size: 4 },
+            { name: "Skorpion", type: "SMG", fireRate: 85, damage: 11, speed: 1000, spread: 0.10, color: "#ffddaa", size: 3 },
+            { name: "Nailgun", type: "SMG", fireRate: 120, damage: 16, speed: 900, spread: 0.05, color: "#aaaaaa", size: 3 },
+            { name: "Tommy Gun", type: "SMG", fireRate: 130, damage: 17, speed: 1200, spread: 0.07, color: "#ffaa55", size: 5 },
+            // ASSAULT RIFLES (21-30)
+            { name: "AK-47 Vandal", type: "Rifle", fireRate: 160, damage: 24, speed: 1800, spread: 0.04, color: "#ff3300", size: 5 },
+            { name: "M4A1 Phantom", type: "Rifle", fireRate: 130, damage: 20, speed: 1900, spread: 0.03, color: "#33ccff", size: 5 },
+            { name: "SCAR-H", type: "Rifle", fireRate: 200, damage: 28, speed: 2000, spread: 0.02, color: "#ffaa33", size: 6 },
+            { name: "FAMAS Burst", type: "Rifle", fireRate: 120, damage: 19, speed: 1700, spread: 0.03, color: "#aaaaaa", size: 5 },
+            { name: "AUG Scoped", type: "Rifle", fireRate: 150, damage: 22, speed: 1900, spread: 0.02, color: "#33ff33", size: 5 },
+            { name: "Galil AR", type: "Rifle", fireRate: 140, damage: 21, speed: 1600, spread: 0.05, color: "#ddaa77", size: 5 },
+            { name: "G36C", type: "Rifle", fireRate: 135, damage: 20, speed: 1750, spread: 0.04, color: "#cccccc", size: 5 },
+            { name: "FAL Heavy", type: "Rifle", fireRate: 250, damage: 32, speed: 2100, spread: 0.02, color: "#ff5522", size: 6 },
+            { name: "L85A2", type: "Rifle", fireRate: 145, damage: 23, speed: 1800, spread: 0.03, color: "#88cc88", size: 5 },
+            { name: "Tavor TAR-21", type: "Rifle", fireRate: 125, damage: 19, speed: 1850, spread: 0.04, color: "#aaaaff", size: 5 },
+            // SNIPERS & DMR (31-40)
+            { name: "AWP Operator", type: "Sniper", fireRate: 1500, damage: 100, speed: 4000, spread: 0.00, color: "#00ff00", size: 8 },
+            { name: "Scout SSG", type: "Sniper", fireRate: 1000, damage: 65, speed: 3000, spread: 0.00, color: "#aaffaa", size: 6 },
+            { name: "SKS Marksman", type: "Sniper", fireRate: 300, damage: 35, speed: 2500, spread: 0.01, color: "#ffaa77", size: 5 },
+            { name: "M14 EBR", type: "Sniper", fireRate: 400, damage: 45, speed: 2600, spread: 0.01, color: "#cccccc", size: 6 },
+            { name: "Barrett .50 Cal", type: "Sniper", fireRate: 2000, damage: 150, speed: 5000, spread: 0.00, color: "#ff0000", size: 10 },
+            { name: "Dragunov SVD", type: "Sniper", fireRate: 500, damage: 55, speed: 2800, spread: 0.01, color: "#ff8855", size: 6 },
+            { name: "VSS Vintorez", type: "Sniper", fireRate: 250, damage: 30, speed: 1500, spread: 0.02, color: "#888888", size: 5 },
+            { name: "Kar98k", type: "Sniper", fireRate: 1200, damage: 85, speed: 3200, spread: 0.00, color: "#ddaa55", size: 7 },
+            { name: "Mini-14", type: "Sniper", fireRate: 280, damage: 28, speed: 2200, spread: 0.02, color: "#aaaaaa", size: 5 },
+            { name: "Railgun", type: "Sniper", fireRate: 2500, damage: 200, speed: 6000, spread: 0.00, color: "#00ffff", size: 12 },
+            // SHOTGUNS (41-45) *Handled uniquely in logic (shoots multiple pellets)*
+            { name: "Pump Action", type: "Shotgun", fireRate: 800, damage: 15, speed: 1200, spread: 0.15, color: "#ffaa00", size: 4, pellets: 8 },
+            { name: "Double Barrel", type: "Shotgun", fireRate: 400, damage: 20, speed: 1300, spread: 0.20, color: "#ff5500", size: 5, pellets: 12 },
+            { name: "SPAS-12", type: "Shotgun", fireRate: 600, damage: 12, speed: 1100, spread: 0.12, color: "#aaaaaa", size: 4, pellets: 7 },
+            { name: "Auto Shotgun", type: "Shotgun", fireRate: 250, damage: 8, speed: 1000, spread: 0.18, color: "#ff3333", size: 3, pellets: 5 },
+            { name: "Sawed-Off", type: "Shotgun", fireRate: 500, damage: 25, speed: 900, spread: 0.30, color: "#cc7733", size: 5, pellets: 10 },
+            // SPECIAL & HEAVY (46-50)
+            { name: "Minigun", type: "Heavy", fireRate: 40, damage: 12, speed: 1800, spread: 0.15, color: "#ffaa00", size: 5 },
+            { name: "Plasma Rifle", type: "Energy", fireRate: 150, damage: 25, speed: 1200, spread: 0.02, color: "#ff00ff", size: 6 },
+            { name: "Laser Beam", type: "Energy", fireRate: 20, damage: 5, speed: 4000, spread: 0.00, color: "#00ffff", size: 3 },
+            { name: "M249 SAW", type: "Heavy", fireRate: 90, damage: 18, speed: 1600, spread: 0.08, color: "#ffffaa", size: 5 },
+            { name: "BFG 9000", type: "Energy", fireRate: 3000, damage: 500, speed: 800, spread: 0.00, color: "#00ff00", size: 30 }
+        ];
+
+        // Populate Weapon Select
+        const wSelect = document.getElementById('weapon-select');
+        WEAPONS.forEach((w, i) => {
+            const opt = document.createElement('option');
+            opt.value = i; opt.innerText = `[${w.type}] ${w.name}`;
+            wSelect.appendChild(opt);
+        });
+
+        /* =====================================================================
+           PART 2: MAP GENERATOR (5 DIFFERENT LAYOUTS)
+           ===================================================================== */
+        const MAP_SIZE = 3000;
+        let mapWalls = [];
+
+        function generateMap(mapIndex) {
+            mapWalls = [];
+            // Map Borders (Always exist)
+            mapWalls.push({ x: 0, y: 0, w: MAP_SIZE, h: 50 });
+            mapWalls.push({ x: 0, y: MAP_SIZE-50, w: MAP_SIZE, h: 50 });
+            mapWalls.push({ x: 0, y: 0, w: 50, h: MAP_SIZE });
+            mapWalls.push({ x: MAP_SIZE-50, y: 0, w: 50, h: MAP_SIZE });
+
+            if (mapIndex == 0) { // THE ARENA (Symmetrical cover)
+                mapWalls.push({x: 500, y: 500, w: 300, h: 100}); mapWalls.push({x: 2200, y: 500, w: 300, h: 100});
+                mapWalls.push({x: 500, y: 2400, w: 300, h: 100}); mapWalls.push({x: 2200, y: 2400, w: 300, h: 100});
+                mapWalls.push({x: 1200, y: 1200, w: 600, h: 600});
+                mapWalls.push({x: 800, y: 1400, w: 100, h: 200}); mapWalls.push({x: 2100, y: 1400, w: 100, h: 200});
+            } 
+            else if (mapIndex == 1) { // TIGHT CORRIDORS
+                for(let i=200; i<2800; i+=400) { mapWalls.push({x: i, y: 200, w: 50, h: 1000}); mapWalls.push({x: i+200, y: 1800, w: 50, h: 1000}); }
+                mapWalls.push({x: 0, y: 1400, w: 1200, h: 200}); mapWalls.push({x: 1800, y: 1400, w: 1200, h: 200});
+            }
+            else if (mapIndex == 2) { // SNIPER'S FIELD (Very open, small blocks)
+                mapWalls.push({x: 300, y: 300, w: 200, h: 200}); mapWalls.push({x: 2500, y: 2500, w: 200, h: 200});
+                mapWalls.push({x: 2500, y: 300, w: 200, h: 200}); mapWalls.push({x: 300, y: 2500, w: 200, h: 200});
+                mapWalls.push({x: 1400, y: 1400, w: 200, h: 200}); // Tiny center cover
+            }
+            else if (mapIndex == 3) { // THE MAZE
+                mapWalls.push({x: 300, y: 300, w: 2400, h: 100}); mapWalls.push({x: 300, y: 700, w: 100, h: 2000});
+                mapWalls.push({x: 700, y: 700, w: 2000, h: 100}); mapWalls.push({x: 2600, y: 1100, w: 100, h: 1600});
+                mapWalls.push({x: 700, y: 1100, w: 1500, h: 100}); mapWalls.push({x: 1100, y: 1500, w: 1500, h: 100});
+                mapWalls.push({x: 1100, y: 1500, w: 100, h: 1200});
+            }
+            else if (mapIndex == 4) { // CROSSROADS
+                mapWalls.push({x: 0, y: 0, w: 1200, h: 1200}); mapWalls.push({x: 1800, y: 0, w: 1200, h: 1200});
+                mapWalls.push({x: 0, y: 1800, w: 1200, h: 1200}); mapWalls.push({x: 1800, y: 1800, w: 1200, h: 1200});
+                mapWalls.push({x: 1400, y: 1400, w: 200, h: 200}); // Center diamond
+            }
+        }
+
+        /* =====================================================================
+           PART 3: GAME ENGINE & STATE
            ===================================================================== */
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        
-        // Resize canvas to fill screen
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resize);
-        resize();
+        window.addEventListener('resize', resize); resize();
 
-        // Game State
         const STATE = {
-            isPlaying: false,
-            myHp: 100, maxHp: 100,
-            myKills: 0, enemyKills: 0, winScore: 5,
-            isDead: false,
-            canShoot: true,
-            fireRate: 150, // ms between shots
-            screenShake: 0
+            isPlaying: false, isDead: false, isMatchOver: false,
+            myHp: 100, maxHp: 100, myKills: 0, enemyKills: 0, winScore: 5,
+            canShoot: true, screenShake: 0, mapSelection: 0
         };
 
-        // Network State
-        const NET = {
-            peer: null, conn: null, code: '',
-            isHost: false, lastSyncTime: 0
-        };
-
-        // Generate 5 letter code
+        const NET = { peer: null, conn: null, code: '', isHost: false };
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         for(let i=0; i<5; i++) NET.code += chars.charAt(Math.floor(Math.random() * chars.length));
 
-        /* =====================================================================
-           PART 2: MAP, ENTITIES, & PHYSICS ENGINE
-           ===================================================================== */
-        const MAP_SIZE = 2500;
-        const TILE_SIZE = 100;
+        const player = { x: 200, y: 200, size: 40, color: '#00ffff', angle: 0, isDashing: false, stance: 'STAND' };
+        const enemy = { x: -1000, y: -1000, size: 40, color: '#ff0055', angle: 0, stance: 'STAND' };
         
-        // The Map (Walls)
-        const walls = [];
-        function addWall(x, y, w, h) { walls.push({ x, y, w, h }); }
-        
-        // Map Borders
-        addWall(0, 0, MAP_SIZE, 50); // Top
-        addWall(0, MAP_SIZE-50, MAP_SIZE, 50); // Bottom
-        addWall(0, 0, 50, MAP_SIZE); // Left
-        addWall(MAP_SIZE-50, 0, 50, MAP_SIZE); // Right
+        let myWeapon = WEAPONS[0];
+        let enemyWeapon = WEAPONS[0]; // Default until sync
 
-        // Inner Arena Cover
-        addWall(500, 500, 300, 100);
-        addWall(1700, 500, 300, 100);
-        addWall(500, 1900, 300, 100);
-        addWall(1700, 1900, 300, 100);
-        addWall(1000, 1000, 500, 500); // Massive center block
-        addWall(400, 1200, 100, 400);
-        addWall(2000, 900, 100, 400);
-
-        // Player Entities
-        const player = {
-            x: 200, y: 200, size: 40, color: '#00ffff',
-            vx: 0, vy: 0, speed: 400, dashSpeed: 1200,
-            angle: 0, isDashing: false
-        };
-
-        const enemy = {
-            x: -1000, y: -1000, size: 40, color: '#ff0055', angle: 0
-        };
-
-        // Projectiles & Particles
         let bullets = [];
         let particles = [];
-
-        // Camera
         const camera = { x: 0, y: 0 };
 
-        // Input Tracking
-        const keys = { w: false, a: false, s: false, d: false, shift: false };
+        // Input Engine (Fixed for parallel move/shoot)
+        const keys = { w: false, a: false, s: false, d: false, shift: false, e: false };
         const mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false };
 
+        window.addEventListener('keydown', e => { 
+            const k = e.key.toLowerCase(); 
+            if(keys.hasOwnProperty(k)) keys[k] = true; 
+            if(e.key === 'Shift') keys.shift = true;
+        });
+        window.addEventListener('keyup', e => { 
+            const k = e.key.toLowerCase(); 
+            if(keys.hasOwnProperty(k)) keys[k] = false; 
+            if(e.key === 'Shift') keys.shift = false;
+        });
+        window.addEventListener('mousemove', e => { 
+            mouse.x = e.clientX; mouse.y = e.clientY; 
+        });
+        window.addEventListener('mousedown', () => { mouse.down = true; });
+        window.addEventListener('mouseup', () => { mouse.down = false; });
+
         /* =====================================================================
-           PART 3: NETWORKING (PEER.JS)
+           PART 4: NETWORKING
            ===================================================================== */
         NET.peer = new Peer('RIV2D-' + NET.code);
-
         NET.peer.on('open', id => { document.getElementById('my-id').innerText = NET.code; });
 
-        // On Receive Connection
+        // Host gets connection
         NET.peer.on('connection', c => {
             NET.conn = c; NET.isHost = true;
+            STATE.mapSelection = parseInt(document.getElementById('map-select').value);
             setupNetwork();
+            // Send map and weapon to joiner
+            NET.conn.on('open', () => {
+                NET.conn.send({ type: 'setup', map: STATE.mapSelection, weaponIndex: document.getElementById('weapon-select').value });
+            });
             startGame();
         });
 
-        // On Join
+        // Joiner connects
         document.getElementById('join-btn').onclick = () => {
-            const inputCode = document.getElementById('join-input').value.toUpperCase();
-            if(inputCode.length !== 5) return alert("CODE MUST BE 5 LETTERS");
-            NET.conn = NET.peer.connect('RIV2D-' + inputCode);
+            const code = document.getElementById('join-input').value.toUpperCase();
+            if(code.length !== 5) return alert("CODE MUST BE 5 LETTERS");
+            NET.conn = NET.peer.connect('RIV2D-' + code);
             NET.isHost = false;
             setupNetwork();
-            startGame();
+            // Wait for 'setup' packet from host to start
         };
 
         function setupNetwork() {
             NET.conn.on('data', data => {
-                // Enemy Movement Sync
-                if (data.type === 'move') {
-                    enemy.x = data.x;
-                    enemy.y = data.y;
-                    enemy.angle = data.angle;
+                if (data.type === 'setup') {
+                    STATE.mapSelection = data.map;
+                    enemyWeapon = WEAPONS[data.weaponIndex];
+                    if(!NET.isHost) {
+                        NET.conn.send({ type: 'weapon_sync', weaponIndex: document.getElementById('weapon-select').value });
+                        startGame();
+                    }
                 }
-                // Enemy Fired a Bullet
-                if (data.type === 'shoot') {
-                    spawnBullet(data.bx, data.by, data.vx, data.vy, false);
-                    STATE.screenShake = 5; // Small shake when enemy shoots near you
+                if (data.type === 'weapon_sync') { enemyWeapon = WEAPONS[data.weaponIndex]; }
+                if (data.type === 'move') { enemy.x = data.x; enemy.y = data.y; enemy.angle = data.angle; enemy.stance = data.stance; }
+                if (data.type === 'shoot') { 
+                    spawnBullet(data.bx, data.by, data.vx, data.vy, false, enemyWeapon); 
+                    STATE.screenShake = 3; 
                 }
-                // Enemy Hit You
-                if (data.type === 'hit') {
-                    takeDamage(data.dmg);
-                }
-                // Enemy Died
+                if (data.type === 'hit') takeDamage(data.dmg);
                 if (data.type === 'death') {
                     STATE.myKills++;
                     updateScore();
-                    announce("ENEMY ELIMINATED!");
                     createExplosion(enemy.x, enemy.y, enemy.color);
-                    if(STATE.myKills >= STATE.winScore) announce("VICTORY", 5000);
+                    if(STATE.myKills >= STATE.winScore) triggerMatchWin("YOU WIN!");
+                    else announce("ENEMY ELIMINATED!", 1500);
                 }
             });
         }
 
         /* =====================================================================
-           PART 4: INPUT & CONTROLS
+           PART 5: MOVEMENT & COMBAT LOGIC
            ===================================================================== */
-        window.addEventListener('keydown', e => {
-            const k = e.key.toLowerCase();
-            if (keys.hasOwnProperty(k)) keys[k] = true;
-            if (e.key === 'Shift' && !player.isDashing && !STATE.isDead) dash();
-        });
-
-        window.addEventListener('keyup', e => {
-            const k = e.key.toLowerCase();
-            if (keys.hasOwnProperty(k)) keys[k] = false;
-        });
-
-        window.addEventListener('mousemove', e => {
-            mouse.x = e.clientX; mouse.y = e.clientY;
-            // Convert screen mouse pos to world pos
-            mouse.worldX = mouse.x + camera.x - canvas.width/2;
-            mouse.worldY = mouse.y + camera.y - canvas.height/2;
-        });
-
-        window.addEventListener('mousedown', () => { mouse.down = true; });
-        window.addEventListener('mouseup', () => { mouse.down = false; });
-
-        function dash() {
-            player.isDashing = true;
-            // Determine direction vector based on keys
-            let dx = 0, dy = 0;
-            if(keys.w) dy -= 1; if(keys.s) dy += 1;
-            if(keys.a) dx -= 1; if(keys.d) dx += 1;
-            
-            // If standing still, dash towards mouse
-            if(dx === 0 && dy === 0) {
-                dx = Math.cos(player.angle);
-                dy = Math.sin(player.angle);
-            } else {
-                // Normalize
-                const len = Math.hypot(dx, dy);
-                dx /= len; dy /= len;
-            }
-
-            player.vx = dx * player.dashSpeed;
-            player.vy = dy * player.dashSpeed;
-
-            // Cooldown & End dash
-            setTimeout(() => { player.isDashing = false; }, 150);
+        function triggerMatchWin(msg) {
+            STATE.isMatchOver = true;
+            announce(msg, 4000);
+            document.getElementById('hud').style.background = "rgba(0,0,0,0.8)";
+            setTimeout(() => {
+                STATE.myKills = 0; STATE.enemyKills = 0;
+                updateScore();
+                STATE.isMatchOver = false;
+                document.getElementById('hud').style.background = "transparent";
+                respawn();
+                announce("MATCH 2: FIGHT!", 2000);
+            }, 4000);
         }
 
-        /* =====================================================================
-           PART 5: GAME LOGIC & COMBAT
-           ===================================================================== */
-        function spawnBullet(x, y, vx, vy, isMine) {
-            bullets.push({ x, y, vx, vy, isMine, life: 100, radius: 5 });
+        function spawnBullet(x, y, vx, vy, isMine, wpn) {
+            bullets.push({ x, y, vx, vy, isMine, life: 150, radius: wpn.size, color: wpn.color, damage: wpn.damage });
         }
 
-        function shoot() {
-            if (!STATE.canShoot || STATE.isDead) return;
+        function fireWeapon() {
+            if (!STATE.canShoot || STATE.isDead || STATE.isMatchOver) return;
             STATE.canShoot = false;
-            setTimeout(() => STATE.canShoot = true, STATE.fireRate);
+            setTimeout(() => STATE.canShoot = true, myWeapon.fireRate);
 
-            STATE.screenShake = 10;
-
-            // Calculate bullet velocity based on angle
-            const speed = 1500;
-            const bx = player.x;
-            const by = player.y;
-            const bvx = Math.cos(player.angle) * speed;
-            const bvy = Math.sin(player.angle) * speed;
-
-            spawnBullet(bx, by, bvx, bvy, true);
+            STATE.screenShake = 15;
+            const bx = player.x; const by = player.y;
             
-            // Tell enemy we shot
-            if(NET.conn && NET.conn.open) {
-                NET.conn.send({ type: 'shoot', bx, by, vx: bvx, vy: bvy });
+            // Adjust spread based on stance
+            let currentSpread = myWeapon.spread;
+            if(player.stance === 'CROUCH') currentSpread = 0.0; // Perfect accuracy
+            if(player.stance === 'SPRINT') currentSpread *= 2.0; // Terrible accuracy
+            
+            let pellets = myWeapon.pellets || 1; // For shotguns
+
+            for(let i=0; i<pellets; i++) {
+                let finalAngle = player.angle + (Math.random() - 0.5) * currentSpread;
+                const bvx = Math.cos(finalAngle) * myWeapon.speed;
+                const bvy = Math.sin(finalAngle) * myWeapon.speed;
+                
+                spawnBullet(bx, by, bvx, bvy, true, myWeapon);
+                if(NET.conn && NET.conn.open) NET.conn.send({ type: 'shoot', bx, by, vx: bvx, vy: bvy });
             }
         }
 
         function takeDamage(amount) {
-            if (STATE.isDead) return;
+            if (STATE.isDead || STATE.isMatchOver) return;
             STATE.myHp -= amount;
-            
-            // Visual feedback
-            const overlay = document.getElementById('damage-overlay');
-            overlay.style.opacity = 1;
-            setTimeout(() => overlay.style.opacity = 0, 150);
+            document.getElementById('damage-overlay').style.opacity = 1;
+            setTimeout(() => document.getElementById('damage-overlay').style.opacity = 0, 100);
             STATE.screenShake = 20;
 
-            // Update Health Bar UI
             const bar = document.getElementById('health-bar');
             bar.style.width = Math.max(0, (STATE.myHp / STATE.maxHp) * 100) + "%";
             document.getElementById('health-text').innerText = `${Math.max(0, STATE.myHp)} / ${STATE.maxHp}`;
-            if(STATE.myHp <= 30) bar.style.background = "linear-gradient(90deg, #ff0000, #aa0000)";
-            else bar.style.background = "linear-gradient(90deg, #00ff00, #00aa00)";
+            if(STATE.myHp <= 30) bar.style.background = "#ff0000"; else bar.style.background = "#0f0";
 
             if (STATE.myHp <= 0) die();
         }
@@ -331,54 +365,40 @@
             STATE.isDead = true;
             STATE.enemyKills++;
             updateScore();
-            announce("YOU DIED");
             createExplosion(player.x, player.y, player.color);
-            
             if(NET.conn) NET.conn.send({ type: 'death' });
             
-            setTimeout(respawn, 3000);
+            if(STATE.enemyKills >= STATE.winScore) triggerMatchWin("ENEMY WINS!");
+            else { announce("YOU DIED", 2000); setTimeout(respawn, 2500); }
         }
 
         function respawn() {
-            STATE.isDead = false;
-            STATE.myHp = STATE.maxHp;
+            STATE.isDead = false; STATE.myHp = STATE.maxHp;
+            player.x = NET.isHost ? 300 : MAP_SIZE - 300;
+            player.y = NET.isHost ? 300 : MAP_SIZE - 300;
             
-            // Find random spawn point far from center
-            player.x = Math.random() > 0.5 ? 200 : MAP_SIZE - 200;
-            player.y = Math.random() > 0.5 ? 200 : MAP_SIZE - 200;
-            
-            // Reset UI
             document.getElementById('health-bar').style.width = "100%";
-            document.getElementById('health-bar').style.background = "linear-gradient(90deg, #00ff00, #00aa00)";
+            document.getElementById('health-bar').style.background = "#0f0";
             document.getElementById('health-text').innerText = "100 / 100";
         }
 
-        // Particle System
         function createExplosion(x, y, color) {
-            for(let i=0; i<30; i++) {
-                particles.push({
-                    x, y, 
-                    vx: (Math.random() - 0.5) * 800, 
-                    vy: (Math.random() - 0.5) * 800,
-                    life: 1.0, color, size: Math.random() * 6 + 2
-                });
-            }
+            for(let i=0; i<40; i++) particles.push({ x, y, vx: (Math.random()-0.5)*1000, vy: (Math.random()-0.5)*1000, life: 1.0, color, size: Math.random()*8+2 });
         }
 
-        // Simple AABB Collision Check
-        function checkCollision(rect1, rect2) {
-            return (rect1.x < rect2.x + rect2.w &&
-                    rect1.x + rect1.w > rect2.x &&
-                    rect1.y < rect2.y + rect2.h &&
-                    rect1.y + rect1.h > rect2.y);
+        function checkCollision(r1, r2) {
+            return (r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y);
         }
 
         /* =====================================================================
-           PART 6: THE GAME LOOP (UPDATE & RENDER)
+           PART 6: MASTER GAME LOOP
            ===================================================================== */
         let lastTime = performance.now();
 
         function startGame() {
+            myWeapon = WEAPONS[document.getElementById('weapon-select').value];
+            document.getElementById('weapon-text').innerText = myWeapon.name;
+            generateMap(STATE.mapSelection);
             document.getElementById('lobby').style.display = 'none';
             document.getElementById('hud').style.display = 'block';
             STATE.isPlaying = true;
@@ -394,221 +414,166 @@
         function announce(txt, time=2000) {
             const el = document.getElementById('announcer');
             el.innerText = txt; el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', time);
+            if(time > 0) setTimeout(() => el.style.display = 'none', time);
         }
 
         function gameLoop(timestamp) {
             if(!STATE.isPlaying) return;
-            
             const dt = (timestamp - lastTime) / 1000;
             lastTime = timestamp;
 
-            // --- 1. PLAYER UPDATE ---
-            if (!STATE.isDead) {
-                // Aiming
+            // --- 1. PLAYER INPUT (MOVEMENT & SHOOTING PARALLEL) ---
+            if (!STATE.isDead && !STATE.isMatchOver) {
+                // Aiming calculation
                 mouse.worldX = mouse.x + camera.x - canvas.width/2;
                 mouse.worldY = mouse.y + camera.y - canvas.height/2;
                 player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
 
-                // Shooting
-                if (mouse.down) shoot();
+                // Continuous Shooting check (Completely independent of movement keys)
+                if (mouse.down) fireWeapon();
 
-                // Movement Logic
-                if (!player.isDashing) {
-                    let dx = 0, dy = 0;
-                    if(keys.w) dy -= 1; if(keys.s) dy += 1;
-                    if(keys.a) dx -= 1; if(keys.d) dx += 1;
-                    
-                    if(dx !== 0 && dy !== 0) {
-                        const len = Math.hypot(dx, dy);
-                        dx /= len; dy /= len;
-                    }
-                    
-                    // Friction/Acceleration smooth out
-                    player.vx = player.vx * 0.8 + (dx * player.speed) * 0.2;
-                    player.vy = player.vy * 0.8 + (dy * player.speed) * 0.2;
+                // Advanced Movement Logic
+                let speed = 300;
+                player.stance = 'STAND';
+                document.getElementById('stance-text').style.color = "#00ffff";
+
+                if (keys.e) { 
+                    speed = 100; player.stance = 'CROUCH'; 
+                    document.getElementById('stance-text').style.color = "#ffff00"; 
+                }
+                else if (keys.shift) { 
+                    speed = 550; player.stance = 'SPRINT'; 
+                    document.getElementById('stance-text').style.color = "#ff00ff"; 
                 }
 
-                // Physics: Wall Sliding X Axis
-                player.x += player.vx * dt;
+                // Dash Mechanic (Shift + E while moving)
+                if (keys.shift && keys.e && !player.isDashing) {
+                    player.isDashing = true;
+                    speed = 2000; // Massive burst
+                    setTimeout(() => player.isDashing = false, 200);
+                }
+
+                document.getElementById('stance-text').innerText = player.stance;
+
+                let dx = 0, dy = 0;
+                if(keys.w) dy -= 1; if(keys.s) dy += 1;
+                if(keys.a) dx -= 1; if(keys.d) dx += 1;
+                
+                if(dx !== 0 && dy !== 0) { const len = Math.hypot(dx, dy); dx /= len; dy /= len; }
+
+                // Apply velocity & Wall Sliding
+                let vx = dx * speed; let vy = dy * speed;
+                
+                player.x += vx * dt;
                 let pRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
-                for(let w of walls) {
+                for(let w of mapWalls) {
                     if(checkCollision(pRect, w)) {
-                        // Push out
-                        if(player.vx > 0) player.x = w.x - player.size/2;
-                        else player.x = w.x + w.w + player.size/2;
-                        player.vx = 0;
+                        if(vx > 0) player.x = w.x - player.size/2; else player.x = w.x + w.w + player.size/2;
                     }
                 }
 
-                // Physics: Wall Sliding Y Axis
-                player.y += player.vy * dt;
+                player.y += vy * dt;
                 pRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
-                for(let w of walls) {
+                for(let w of mapWalls) {
                     if(checkCollision(pRect, w)) {
-                        // Push out
-                        if(player.vy > 0) player.y = w.y - player.size/2;
-                        else player.y = w.y + w.h + player.size/2;
-                        player.vy = 0;
+                        if(vy > 0) player.y = w.y - player.size/2; else player.y = w.y + w.h + player.size/2;
                     }
                 }
 
-                // Send Network Data (20 times per second)
-                if (NET.conn && timestamp - NET.lastSyncTime > 50) {
-                    NET.conn.send({ type: 'move', x: player.x, y: player.y, angle: player.angle });
-                    NET.lastSyncTime = timestamp;
+                // Network Sync
+                if (NET.conn && timestamp % 50 < 20) {
+                    NET.conn.send({ type: 'move', x: player.x, y: player.y, angle: player.angle, stance: player.stance });
                 }
-            } else {
-                player.vx = 0; player.vy = 0;
             }
 
-            // --- 2. BULLET UPDATE ---
+            // --- 2. BULLET PHYSICS ---
             for (let i = bullets.length - 1; i >= 0; i--) {
                 let b = bullets[i];
-                b.x += b.vx * dt;
-                b.y += b.vy * dt;
-                b.life--;
+                b.x += b.vx * dt; b.y += b.vy * dt; b.life--;
 
                 let destroyed = false;
-                
-                // Wall Collision
-                for(let w of walls) {
+                for(let w of mapWalls) {
                     if(b.x > w.x && b.x < w.x+w.w && b.y > w.y && b.y < w.y+w.h) {
-                        createExplosion(b.x, b.y, '#ffff00'); // Sparks
-                        destroyed = true; break;
+                        createExplosion(b.x, b.y, '#ffff00'); destroyed = true; break;
                     }
                 }
 
-                // Player Collision (Did MY bullet hit ENEMY?)
-                if (b.isMine && !destroyed) {
-                    let dx = b.x - enemy.x;
-                    let dy = b.y - enemy.y;
-                    if (Math.hypot(dx, dy) < enemy.size/2 + b.radius) {
-                        createExplosion(b.x, b.y, '#ff0000'); // Blood/Sparks
-                        
-                        // Show Hitmarker
-                        const hm = document.getElementById('hitmarker');
-                        hm.style.opacity = 1;
-                        setTimeout(() => hm.style.opacity = 0, 100);
-                        
-                        // Send damage packet
-                        if(NET.conn) NET.conn.send({ type: 'hit', dmg: 25 });
+                if (b.isMine && !destroyed && !STATE.isMatchOver) {
+                    if (Math.hypot(b.x - enemy.x, b.y - enemy.y) < enemy.size/2 + b.radius) {
+                        createExplosion(b.x, b.y, '#ff0000');
+                        if(NET.conn) NET.conn.send({ type: 'hit', dmg: b.damage });
                         destroyed = true;
                     }
                 }
-
                 if (destroyed || b.life <= 0) bullets.splice(i, 1);
             }
 
-            // --- 3. PARTICLE UPDATE ---
+            // --- 3. PARTICLES & CAMERA ---
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
-                p.x += p.vx * dt;
-                p.y += p.vy * dt;
-                p.vx *= 0.9; // Friction
-                p.vy *= 0.9;
-                p.life -= dt * 2;
+                p.x += p.vx * dt; p.y += p.vy * dt;
+                p.vx *= 0.9; p.vy *= 0.9; p.life -= dt * 2;
                 if(p.life <= 0) particles.splice(i, 1);
             }
 
-            // --- 4. CAMERA UPDATE ---
-            // Smooth follow player
-            let targetCamX = player.x;
-            let targetCamY = player.y;
-            camera.x += (targetCamX - camera.x) * 0.1;
-            camera.y += (targetCamY - camera.y) * 0.1;
+            camera.x += (player.x - camera.x) * 0.15;
+            camera.y += (player.y - camera.y) * 0.15;
+            if(STATE.screenShake > 0) STATE.screenShake *= 0.85;
 
-            // Screen Shake Decay
-            if(STATE.screenShake > 0) STATE.screenShake *= 0.9;
-            if(STATE.screenShake < 0.5) STATE.screenShake = 0;
-
-            // --- 5. RENDER ---
-            ctx.fillStyle = '#0a0a0a';
+            // --- 4. RENDER GRAPHICS ---
+            ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.save();
-            
-            // Apply Camera Translation & Shake
-            let shakeX = (Math.random() - 0.5) * STATE.screenShake;
-            let shakeY = (Math.random() - 0.5) * STATE.screenShake;
-            ctx.translate(canvas.width/2 - camera.x + shakeX, canvas.height/2 - camera.y + shakeY);
+            let sx = (Math.random()-0.5)*STATE.screenShake; let sy = (Math.random()-0.5)*STATE.screenShake;
+            ctx.translate(canvas.width/2 - camera.x + sx, canvas.height/2 - camera.y + sy);
 
-            // Draw Floor Grid (for sense of speed)
-            ctx.strokeStyle = '#111';
-            ctx.lineWidth = 2;
+            // Floor Grid
+            ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2;
             ctx.beginPath();
-            for(let x = 0; x <= MAP_SIZE; x += TILE_SIZE) { ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); }
-            for(let y = 0; y <= MAP_SIZE; y += TILE_SIZE) { ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, y); }
+            for(let i=0; i<=MAP_SIZE; i+=100) { ctx.moveTo(i,0); ctx.lineTo(i,MAP_SIZE); ctx.moveTo(0,i); ctx.lineTo(MAP_SIZE,i); }
             ctx.stroke();
 
             // Draw Walls
-            ctx.fillStyle = '#1a1a2e';
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 3;
-            for(let w of walls) {
-                ctx.shadowColor = '#00ffff';
-                ctx.shadowBlur = 10;
-                ctx.fillRect(w.x, w.y, w.w, w.h);
-                ctx.shadowBlur = 0;
-                ctx.strokeRect(w.x, w.y, w.w, w.h);
+            ctx.fillStyle = '#111122'; ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 3;
+            for(let w of mapWalls) {
+                ctx.fillRect(w.x, w.y, w.w, w.h); ctx.strokeRect(w.x, w.y, w.w, w.h);
             }
 
-            // Draw Enemy (If connected)
+            // Draw Enemy
             if (NET.conn) {
-                ctx.save();
-                ctx.translate(enemy.x, enemy.y);
-                ctx.rotate(enemy.angle);
-                // Draw Body
-                ctx.fillStyle = enemy.color;
-                ctx.shadowColor = enemy.color; ctx.shadowBlur = 15;
+                ctx.save(); ctx.translate(enemy.x, enemy.y); ctx.rotate(enemy.angle);
+                if(enemy.stance === 'CROUCH') ctx.scale(0.8, 0.8);
+                ctx.fillStyle = enemy.color; ctx.shadowColor = enemy.color; ctx.shadowBlur = 10;
                 ctx.fillRect(-enemy.size/2, -enemy.size/2, enemy.size, enemy.size);
-                // Draw Gun barrel
-                ctx.fillStyle = '#aaa'; ctx.shadowBlur = 0;
-                ctx.fillRect(0, -5, enemy.size/2 + 15, 10);
+                ctx.fillStyle = enemyWeapon.color; ctx.shadowBlur = 0;
+                ctx.fillRect(0, -4, enemy.size/2 + 15, 8);
                 ctx.restore();
             }
 
             // Draw Player
             if (!STATE.isDead) {
-                ctx.save();
-                ctx.translate(player.x, player.y);
-                ctx.rotate(player.angle);
-                // Draw Dash Trail Effect
-                if(player.isDashing) {
-                    ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
-                    ctx.fillRect(-player.size, -player.size/2, player.size, player.size);
-                }
-                // Body
-                ctx.fillStyle = player.color;
-                ctx.shadowColor = player.color; ctx.shadowBlur = 15;
+                ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
+                if(player.stance === 'CROUCH') ctx.scale(0.8, 0.8);
+                if(player.isDashing) { ctx.fillStyle = 'rgba(0,255,255,0.5)'; ctx.fillRect(-player.size, -player.size/2, player.size, player.size); }
+                ctx.fillStyle = player.color; ctx.shadowColor = player.color; ctx.shadowBlur = 10;
                 ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
-                // Gun barrel
-                ctx.fillStyle = '#fff'; ctx.shadowBlur = 0;
-                ctx.fillRect(0, -5, player.size/2 + 15, 10);
+                ctx.fillStyle = myWeapon.color; ctx.shadowBlur = 0;
+                ctx.fillRect(0, -4, player.size/2 + 15, 8);
                 ctx.restore();
             }
 
-            // Draw Bullets
+            // Draw Bullets & Particles
             for(let b of bullets) {
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
-                ctx.fillStyle = b.isMine ? '#00ffff' : '#ff0055';
-                ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
-                ctx.fill();
-                ctx.shadowBlur = 0;
+                ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
+                ctx.fillStyle = b.color; ctx.shadowColor = b.color; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
             }
-
-            // Draw Particles
             for(let p of particles) {
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.fillRect(p.x, p.y, p.size, p.size);
+                ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
             }
             ctx.globalAlpha = 1.0;
-
             ctx.restore();
             
-            // Loop!
             requestAnimationFrame(gameLoop);
         }
     </script>
