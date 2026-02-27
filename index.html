@@ -3,364 +3,549 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rivals: 1v1 Multiplayer</title>
+    <title>RIVALS 3D: THE ULTIMATE 1v1</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root {
-            --bg-color: #0b0b10; --panel-bg: #161620; --text-main: #e2e2e2;
-            --accent-blue: #3b82f6; --accent-purple: #8b5cf6; --accent-red: #ef4444;
-            --accent-green: #10b981; --btn-bg: #222230; --btn-hover: #33334a;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        h1, h2 { text-align: center; text-transform: uppercase; letter-spacing: 2px;}
+        /* =========================================
+           USER INTERFACE & CSS STYLING
+           ========================================= */
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; user-select: none; }
         
-        .screen { display: none; width: 100%; max-width: 900px; flex-direction: column; gap: 20px; }
-        
-        /* Network UI */
-        #network-panel { background: #111; padding: 20px; border: 2px solid var(--accent-blue); border-radius: 8px; text-align: center; }
-        .code-display { font-size: 32px; font-weight: bold; color: var(--accent-purple); letter-spacing: 5px; margin: 10px 0; user-select: all;}
-        .join-input { width: 60%; padding: 15px; font-size: 20px; text-align: center; background: #000; color: white; border: 2px solid #444; border-radius: 8px; text-transform: uppercase;}
-        
-        /* Loadout */
-        .category-box { background: var(--panel-bg); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent-blue); }
-        select { width: 100%; padding: 10px; background: var(--btn-bg); color: white; border: 1px solid #444; border-radius: 4px; font-size: 16px; margin-top: 10px;}
-        .primary-btn { background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); color: white; border: none; padding: 15px; font-size: 18px; font-weight: bold; cursor: pointer; border-radius: 8px; text-transform: uppercase; width: 100%; transition: 0.2s; margin-top: 10px; }
-        .primary-btn:hover:not(:disabled) { filter: brightness(1.2); transform: scale(1.02); }
-        .primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* The Crosshair */
+        #crosshair-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; display: flex; justify-content: center; align-items: center; }
+        #crosshair-dot { width: 6px; height: 6px; background: #0f0; border-radius: 50%; }
+        #hitmarker { position: absolute; color: red; font-size: 24px; font-weight: bold; display: none; font-family: sans-serif; transform: rotate(45deg); }
 
-        /* Combat UI */
-        #hud-container { display: flex; justify-content: space-between; gap: 20px; }
-        .agent-panel { flex: 1; background: var(--panel-bg); padding: 20px; border-radius: 8px; position: relative; }
-        .player-panel { border-top: 4px solid var(--accent-blue); }
-        .enemy-panel { border-top: 4px solid var(--accent-red); }
-        .health-bar-container { width: 100%; background: #222; height: 25px; border-radius: 4px; margin: 10px 0; position: relative; }
-        .health-bar { height: 100%; transition: width 0.2s ease-out; }
-        #p-hp-bar { background: var(--accent-blue); width: 100%; }
-        #e-hp-bar { background: var(--accent-red); width: 100%; }
-        .hp-text { position: absolute; top: 2px; left: 10px; font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px black;}
-        
-        #arena-status { text-align: center; font-size: 20px; font-weight: bold; padding: 15px; background: #111; border: 2px solid #333; border-radius: 8px; color: var(--accent-purple);}
-        #turn-indicator { font-size: 24px; color: var(--accent-green); margin-top: 10px; display: block;}
-        
-        #log-box { background: #050508; border: 1px solid #333; height: 300px; padding: 15px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 14px; border-radius: 8px; }
-        .controls-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        button.action-btn { background: var(--btn-bg); color: var(--text-main); border: 1px solid #444; padding: 15px; font-size: 15px; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.2s; }
-        button.action-btn:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--accent-blue); }
-        button.action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        /* Lobby Screen */
+        #lobby { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #050510 0%, #1a0b2e 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: #fff; text-align: center; }
+        h1 { font-size: 48px; color: #00ffff; text-shadow: 0 0 10px #00ffff; margin-bottom: 10px; }
+        .box { background: rgba(0,0,0,0.6); padding: 30px; border: 2px solid #00ffff; border-radius: 10px; margin: 15px; width: 400px; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); }
+        .code-display { font-size: 32px; color: #ff00ff; font-weight: bold; letter-spacing: 5px; margin: 10px 0; }
+        input { background: #111; border: 2px solid #ff00ff; color: #fff; padding: 15px; font-size: 18px; width: 80%; text-align: center; text-transform: uppercase; margin-bottom: 15px; outline: none; }
+        button { background: #00ffff; color: #000; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; text-transform: uppercase; width: 90%; }
+        button:hover { background: #ff00ff; color: #fff; transform: scale(1.05); }
 
-        .log-p { color: var(--accent-blue); }
-        .log-e { color: var(--accent-red); }
-        .log-dmg { color: var(--accent-green); font-weight: bold;}
-        .log-sys { color: #888; font-style: italic;}
+        /* Game HUD */
+        #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: none; }
+        .hud-panel { position: absolute; background: rgba(0,0,0,0.5); padding: 15px; border: 1px solid #333; }
+        #health-bar-container { bottom: 30px; left: 30px; width: 300px; height: 30px; background: #222; border: 2px solid #555; position: absolute; }
+        #health-bar { width: 100%; height: 100%; background: #0f0; transition: width 0.1s, background 0.2s; }
+        #health-text { position: absolute; top: 5px; left: 10px; font-weight: bold; color: white; text-shadow: 1px 1px 0 #000; }
+        
+        #scoreboard { top: 20px; left: 50%; transform: translateX(-50%); font-size: 24px; font-weight: bold; color: white; text-align: center; display: flex; gap: 20px; background: rgba(0,0,0,0.7); padding: 10px 30px; border-bottom: 3px solid #ff00ff; }
+        .score-blue { color: #00ffff; }
+        .score-red { color: #ff0055; }
+        
+        #killfeed { top: 20px; right: 20px; text-align: right; color: white; font-size: 14px; }
+        
+        /* Action Notifications */
+        #announcer { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: bold; color: #ff00ff; text-shadow: 0 0 10px #ff00ff; display: none; text-align: center; }
     </style>
 </head>
 <body>
 
-<div id="lobby-screen" class="screen" style="display: flex;">
-    <h1>Rivals: P2P Multiplayer</h1>
-    
-    <div id="network-panel">
-        <h2>Host a Private Match</h2>
-        <button class="primary-btn" id="btn-host" onclick="hostGame()">CREATE ROOM CODE</button>
-        <div id="host-code-zone" style="display: none; margin-top: 20px;">
-            <div style="color: #aaa;">Send this code to your friend:</div>
-            <div class="code-display" id="room-code-display">LOADING...</div>
-            <div style="color: var(--accent-green); animation: pulse 1.5s infinite;">Waiting for opponent to join...</div>
+    <div id="lobby">
+        <h1>RIVALS OS v3.0</h1>
+        <p>1v1 TACTICAL ARENA</p>
+        
+        <div class="box">
+            <h3>HOST A MATCH</h3>
+            <p>SEND THIS CODE TO YOUR RIVAL:</p>
+            <div class="code-display" id="my-id">LOADING...</div>
+            <div style="font-size: 12px; color: #888;">WAITING FOR CONNECTION...</div>
+        </div>
+
+        <div class="box">
+            <h3>JOIN A MATCH</h3>
+            <input type="text" id="join-input" placeholder="ENTER 5-LETTER CODE" maxlength="5">
+            <button id="join-btn">CONNECT TO SERVER</button>
         </div>
     </div>
 
-    <div id="network-panel">
-        <h2>Join a Friend</h2>
-        <input type="text" id="join-code-input" class="join-input" placeholder="ENTER 5-LETTER CODE" maxlength="5">
-        <button class="primary-btn" id="btn-join" style="background: #2d2d1a;" onclick="joinGame()">JOIN ROOM</button>
-        <div id="join-status" style="margin-top: 10px; color: #aaa;"></div>
-    </div>
-</div>
-
-<div id="loadout-screen" class="screen">
-    <h1 style="color: var(--accent-green);">CONNECTED!</h1>
-    <h2>Select Your Loadout</h2>
-    <div class="category-box">
-        <select id="sel-primary">
-            <option value="Assault Rifle">Assault Rifle (Mid Range)</option>
-            <option value="Sniper">Sniper (Far Range)</option>
-            <option value="Shotgun">Shotgun (Close Range)</option>
-        </select>
-    </div>
-    <button class="primary-btn" id="btn-ready" onclick="lockLoadout()">LOCK IN & READY UP</button>
-    <div id="ready-status" style="text-align: center; color: #aaa; margin-top: 10px;"></div>
-</div>
-
-<div id="combat-screen" class="screen">
-    <div id="arena-status">
-        DISTANCE: <span id="ui-range">MID RANGE</span>
-        <div id="turn-indicator">WAITING...</div>
-    </div>
-    
-    <div id="hud-container">
-        <div class="agent-panel player-panel">
-            <h2>YOU</h2>
-            <div class="health-bar-container"><div id="p-hp-bar"></div><div class="hp-text" id="p-hp-text">150 / 150</div></div>
-            <div style="font-size: 14px; color: #aaa;">Pri: <span id="p-pri"></span></div>
+    <div id="hud">
+        <div id="scoreboard">
+            <div>YOU: <span id="score-you" class="score-blue">0</span></div>
+            <div>|</div>
+            <div>ENEMY: <span id="score-enemy" class="score-red">0</span></div>
         </div>
-        <div class="agent-panel enemy-panel">
-            <h2>ENEMY</h2>
-            <div class="health-bar-container"><div id="e-hp-bar"></div><div class="hp-text" id="e-hp-text">150 / 150</div></div>
-            <div style="font-size: 14px; color: #aaa;">Pri: <span id="e-pri">???</span></div>
+        
+        <div id="killfeed"></div>
+
+        <div id="health-bar-container">
+            <div id="health-bar"></div>
+            <div id="health-text">100 / 100</div>
         </div>
+        
+        <div id="announcer">HEADSHOT!</div>
     </div>
 
-    <div id="log-box"></div>
-    
-    <div class="controls-grid">
-        <button class="action-btn" id="btn-pri" onclick="takeTurn('primary')">Use Primary Gun</button>
-        <button class="action-btn" id="btn-mel" onclick="takeTurn('melee')">Use Melee Strike</button>
-        <button class="action-btn" onclick="takeTurn('dash-in')">► Dash Forward</button>
-        <button class="action-btn" onclick="takeTurn('dash-out')">◄ Slide Back</button>
+    <div id="crosshair-container">
+        <div id="crosshair-dot"></div>
+        <div id="hitmarker">+</div>
     </div>
-</div>
 
-<script>
-    /* =========================================================================
-       MULTIPLAYER NETWORKING (PeerJS)
-       ========================================================================= */
-    let peer = null;
-    let conn = null;
-    let myRole = ""; // 'host' or 'guest'
-    let roomCode = "";
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
 
-    // Generate a random 5-letter code for the room
-    function generateCode() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        let code = '';
-        for(let i=0; i<5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-        return code;
-    }
+    <script type="module">
+        import * as THREE from 'three';
 
-    function initPeer(id) {
-        // We use a prefix to ensure PeerJS IDs are unique to your game
-        peer = new Peer('RIVALS-' + id);
+        /* =====================================================================
+           PART 1: GAME STATE & VARIABLES
+           ===================================================================== */
+        let myHp = 100;
+        let myKills = 0;
+        let enemyKills = 0;
+        const maxHp = 100;
+        const winScore = 5;
         
-        peer.on('error', (err) => {
-            alert("Network Error: " + err.type);
-            document.getElementById("join-status").innerText = "Connection failed.";
-        });
-        return peer;
-    }
-
-    // HOST LOGIC
-    function hostGame() {
-        document.getElementById("btn-host").style.display = "none";
-        document.getElementById("host-code-zone").style.display = "block";
+        let isDead = false;
+        let canShoot = true;
+        let isDashing = false;
         
-        roomCode = generateCode();
-        document.getElementById("room-code-display").innerText = roomCode;
-        
-        peer = initPeer(roomCode);
-        myRole = "host";
+        // Physics variables
+        const gravity = -30.0;
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let onObject = false;
+        const speedMultiplier = 60.0;
+        const dashSpeed = 150.0;
 
-        // Listen for guest connecting
-        peer.on('connection', (connection) => {
-            conn = connection;
-            setupConnection();
-        });
-    }
+        // Arrays to hold map objects for collision
+        const collidableObjects = [];
 
-    // GUEST LOGIC
-    function joinGame() {
-        roomCode = document.getElementById("join-code-input").value.toUpperCase();
-        if(roomCode.length !== 5) return alert("Code must be 5 letters.");
-        
-        document.getElementById("join-status").innerText = "Connecting...";
-        
-        peer = initPeer(generateCode() + 'G'); // Guest gets random ID
-        myRole = "guest";
+        /* =====================================================================
+           PART 2: NETWORKING (PEER.JS)
+           ===================================================================== */
+        // Generate a simple 5-letter code for easier joining
+        const makeId = () => {
+            let res = '';
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            for(let i=0; i<5; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+            return res;
+        };
+        const myRoomCode = makeId();
 
-        peer.on('open', () => {
-            conn = peer.connect('RIVALS-' + roomCode);
-            setupConnection();
-        });
-    }
+        const peer = new Peer('RIVALS-' + myRoomCode);
+        let conn;
 
-    // SHARED NETWORK LOGIC
-    function setupConnection() {
-        conn.on('open', () => {
-            switchScreen('loadout-screen');
+        peer.on('open', (id) => { 
+            document.getElementById('my-id').innerText = myRoomCode; 
         });
 
-        conn.on('data', (data) => {
-            handleNetworkData(data);
+        // When someone joins your code
+        peer.on('connection', (c) => {
+            conn = c;
+            setupMultiplayer();
+            startMatch();
         });
-    }
 
-    function sendData(dataObj) {
-        if(conn && conn.open) {
-            conn.send(dataObj);
-        }
-    }
+        // When you join someone else's code
+        document.getElementById('join-btn').onclick = () => {
+            const code = document.getElementById('join-input').value.toUpperCase();
+            if(code.length !== 5) return alert("Code must be 5 letters.");
+            conn = peer.connect('RIVALS-' + code);
+            setupMultiplayer();
+            startMatch();
+        };
 
-    /* =========================================================================
-       GAME STATE & LOGIC
-       ========================================================================= */
-    const weapons = {
-        "Assault Rifle": { dmg: 24, acc: [0.6, 0.85, 0.5] },
-        "Sniper": { dmg: 80, acc: [0.2, 0.6, 0.95] },
-        "Shotgun": { dmg: 60, acc: [0.9, 0.2, 0.0] },
-        "Katana": { dmg: 40, acc: [0.9, 0.0, 0.0] }
-    };
-
-    let p = { hp: 150, maxHp: 150, primary: "", ready: false };
-    let e = { hp: 150, maxHp: 150, primary: "", ready: false };
-    
-    let currentRange = 1;
-    let isMyTurn = false;
-    const rangeNames = ["CLOSE QUARTERS", "MID RANGE", "LONG RANGE"];
-
-    function switchScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-        document.getElementById(screenId).style.display = 'flex';
-    }
-
-    function log(msg, style = "") {
-        const box = document.getElementById("log-box");
-        box.innerHTML += `<div class="${style}">> ${msg}</div>`;
-        box.scrollTop = box.scrollHeight;
-    }
-
-    function updateHUD() {
-        document.getElementById("ui-range").innerText = rangeNames[currentRange];
-        document.getElementById("p-hp-bar").style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`;
-        document.getElementById("p-hp-text").innerText = `${p.hp} / ${p.maxHp}`;
-        document.getElementById("e-hp-bar").style.width = `${Math.max(0, (e.hp / e.maxHp) * 100)}%`;
-        document.getElementById("e-hp-text").innerText = `${e.hp} / ${e.maxHp}`;
-
-        // Turn Management UI
-        const indicator = document.getElementById("turn-indicator");
-        const btns = document.querySelectorAll(".action-btn");
-        
-        if (p.hp <= 0 || e.hp <= 0) {
-            indicator.innerText = p.hp <= 0 ? "DEFEAT" : "VICTORY!";
-            indicator.style.color = p.hp <= 0 ? "var(--accent-red)" : "var(--accent-green)";
-            btns.forEach(b => b.disabled = true);
-        } else if (isMyTurn) {
-            indicator.innerText = "YOUR TURN";
-            indicator.style.color = "var(--accent-green)";
-            btns.forEach(b => b.disabled = false);
-        } else {
-            indicator.innerText = "ENEMY IS THINKING...";
-            indicator.style.color = "var(--accent-red)";
-            btns.forEach(b => b.disabled = true);
-        }
-    }
-
-    /* =========================================================================
-       COMBAT & SYNCING
-       ========================================================================= */
-    function lockLoadout() {
-        p.primary = document.getElementById("sel-primary").value;
-        p.ready = true;
-        document.getElementById("btn-ready").disabled = true;
-        document.getElementById("ready-status").innerText = "Waiting for opponent...";
-        
-        // Tell the opponent we are ready and what gun we have
-        sendData({ type: "ready", primary: p.primary });
-        checkStartMatch();
-    }
-
-    function handleNetworkData(data) {
-        // Opponent locked in their loadout
-        if (data.type === "ready") {
-            e.primary = data.primary;
-            e.ready = true;
-            checkStartMatch();
-        }
-        
-        // Opponent took a turn
-        if (data.type === "action") {
-            processEnemyTurn(data);
-        }
-    }
-
-    function checkStartMatch() {
-        if (p.ready && e.ready) {
-            document.getElementById("p-pri").innerText = p.primary;
-            document.getElementById("e-pri").innerText = e.primary;
-            
-            // Host always goes first to prevent network desync
-            isMyTurn = (myRole === "host"); 
-            
-            switchScreen('combat-screen');
-            log("Match Started! First to 0 HP loses.", "log-sys");
-            if(isMyTurn) log("You are the Host. You go first.", "log-sys");
-            updateHUD();
-        }
-    }
-
-    function takeTurn(action) {
-        if (!isMyTurn) return;
-        
-        let resultPacket = { type: "action", action: action, newRange: currentRange, hit: false, dmg: 0, wepName: "" };
-
-        // Handle Movement locally
-        if (action === 'dash-in') {
-            currentRange = Math.max(0, currentRange - 1);
-            resultPacket.newRange = currentRange;
-            log(`YOU dash forward! Distance: ${rangeNames[currentRange]}.`, "log-p");
-        } else if (action === 'dash-out') {
-            currentRange = Math.min(2, currentRange + 1);
-            resultPacket.newRange = currentRange;
-            log(`YOU slide backward! Distance: ${rangeNames[currentRange]}.`, "log-p");
-        } else {
-            // Handle Attacks locally
-            let wepName = action === "primary" ? p.primary : "Katana";
-            resultPacket.wepName = wepName;
-            let acc = weapons[wepName].acc[currentRange];
-
-            if (acc > 0) {
-                let isCrit = Math.random() < 0.15;
-                if (Math.random() <= (isCrit ? acc + 0.2 : acc)) {
-                    let dmg = isCrit ? Math.floor(weapons[wepName].dmg * 1.5) : weapons[wepName].dmg;
-                    e.hp -= dmg;
-                    resultPacket.hit = true;
-                    resultPacket.dmg = dmg;
-                    log(`YOU fire your ${wepName}. <span class="log-dmg">Hits for ${dmg} DMG!</span>`, "log-p");
-                } else {
-                    log(`YOU fire your ${wepName} but miss!`, "log-p");
+        function setupMultiplayer() {
+            conn.on('data', (data) => {
+                // Enemy moved
+                if (data.type === 'move') {
+                    opponent.position.set(data.x, data.y, data.z);
+                    opponent.rotation.y = data.ry;
                 }
-            } else {
-                log(`YOU try to use your ${wepName} but it's out of range!`, "log-p");
-            }
+                // Enemy shot their gun
+                if (data.type === 'shoot') {
+                    createBulletTracer(opponent.position, data.targetX, data.targetY, data.targetZ);
+                    playSound("shoot");
+                }
+                // Enemy hit you!
+                if (data.type === 'hit') {
+                    takeDamage(data.amount);
+                }
+                // Enemy died, you get a point!
+                if (data.type === 'death') {
+                    myKills++;
+                    updateScoreboard();
+                    announce("YOU KILLED THE ENEMY!");
+                    if(myKills >= winScore) announce("VICTORY! YOU WIN!", 5000);
+                }
+            });
         }
 
-        // Send exactly what happened to the enemy so their screen updates
-        sendData(resultPacket);
+        /* =====================================================================
+           PART 3: 3D ENGINE SETUP (THREE.JS)
+           ===================================================================== */
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a1a); // Dark moody sky
+        scene.fog = new THREE.Fog(0x0a0a1a, 10, 100);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.rotation.order = 'YXZ'; // Important for FPS camera
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // Enable shadows for realism
+        document.body.appendChild(renderer.domElement);
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        scene.add(ambientLight);
+
+        const moonLight = new THREE.DirectionalLight(0x8888ff, 1.5);
+        moonLight.position.set(50, 100, 20);
+        moonLight.castShadow = true;
+        scene.add(moonLight);
+
+        // --- OPPONENT MODEL (Red Box with a "Head") ---
+        const opponent = new THREE.Group();
+        // Body
+        const oppBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2, 1.5), new THREE.MeshStandardMaterial({ color: 0xff0055 }));
+        oppBody.position.y = 1;
+        oppBody.castShadow = true;
+        opponent.add(oppBody);
+        // Head
+        const oppHead = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+        oppHead.position.y = 2.4;
+        oppHead.castShadow = true;
+        opponent.add(oppHead);
         
-        // End our turn
-        isMyTurn = false;
-        updateHUD();
-    }
+        scene.add(opponent);
 
-    // Read the data packet the enemy sent and apply it to our screen
-    function processEnemyTurn(data) {
-        // Sync the range if they moved
-        if (data.action === 'dash-in' || data.action === 'dash-out') {
-            currentRange = data.newRange;
-            let verb = data.action === 'dash-in' ? "dashes forward" : "slides backward";
-            log(`ENEMY ${verb}! Distance: ${rangeNames[currentRange]}.`, "log-e");
-        } else {
-            // Take damage if they hit us
-            if (data.hit) {
-                p.hp -= data.dmg;
-                log(`ENEMY fires their ${data.wepName}. <span class="log-dmg">Hits you for ${data.dmg} DMG!</span>`, "log-e");
+        /* =====================================================================
+           PART 4: MAP GENERATION & COLLISIONS
+           ===================================================================== */
+        // Floor
+        const floorGeo = new THREE.PlaneGeometry(200, 200);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Function to build walls/crates
+        function createBlock(x, y, z, w, h, d, color=0x333344) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            collidableObjects.push(mesh); // Add to collision array
+        }
+
+        // Build the Arena
+        // Outer Walls
+        createBlock(0, 10, -50, 100, 20, 2); // North
+        createBlock(0, 10, 50, 100, 20, 2);  // South
+        createBlock(-50, 10, 0, 2, 20, 100); // West
+        createBlock(50, 10, 0, 2, 20, 100);  // East
+
+        // Cover Blocks (Symmetrical Map)
+        createBlock(-15, 3, -15, 6, 6, 6);
+        createBlock(15, 3, 15, 6, 6, 6);
+        createBlock(15, 3, -15, 6, 6, 6);
+        createBlock(-15, 3, 15, 6, 6, 6);
+        
+        // Center Pillar
+        createBlock(0, 5, 0, 4, 10, 4, 0x00ffff);
+
+        // Raycasters for Physics
+        const downRaycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 2);
+        const forwardRaycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, 0, -1), 0, 1.5);
+
+        /* =====================================================================
+           PART 5: MOVEMENT & CONTROLS
+           ===================================================================== */
+        let keys = { w: false, a: false, s: false, d: false, space: false, shift: false };
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key) || key === ' ') {
+                if(key === ' ') keys.space = true;
+                else if (e.shiftKey) { keys.shift = true; dash(); }
+                else keys[key] = true;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key) || key === ' ') {
+                if(key === ' ') keys.space = false;
+                else if(e.key === 'Shift') keys.shift = false;
+                else keys[key] = false;
+            }
+        });
+
+        // Mouse Look
+        document.addEventListener('mousemove', (e) => {
+            if (document.pointerLockElement === document.body && !isDead) {
+                camera.rotation.y -= e.movementX * 0.002;
+                camera.rotation.x -= e.movementY * 0.002;
+                // Clamp looking up and down
+                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+            }
+        });
+
+        // Dash Mechanic
+        function dash() {
+            if(isDashing || isDead) return;
+            isDashing = true;
+            setTimeout(() => isDashing = false, 1000); // 1 sec cooldown
+            
+            // Apply massive burst of velocity in current movement direction
+            if (keys.w) velocity.z -= dashSpeed;
+            if (keys.s) velocity.z += dashSpeed;
+            if (keys.a) velocity.x -= dashSpeed;
+            if (keys.d) velocity.x += dashSpeed;
+        }
+
+        /* =====================================================================
+           PART 6: COMBAT & SHOOTING
+           ===================================================================== */
+        const shootRaycaster = new THREE.Raycaster();
+
+        document.addEventListener('mousedown', () => {
+            if (document.pointerLockElement !== document.body) {
+                // First click locks the mouse
+                document.body.requestPointerLock();
+                return;
+            }
+            if (conn && conn.open && canShoot && !isDead) {
+                fireWeapon();
+            }
+        });
+
+        function fireWeapon() {
+            canShoot = false;
+            setTimeout(() => canShoot = true, 150); // Fire Rate (ms)
+
+            // Screen Recoil
+            camera.rotation.x += 0.02; 
+
+            shootRaycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+            
+            // Check if we hit the enemy
+            const intersects = shootRaycaster.intersectObject(opponent, true);
+            
+            let hitPoint = null;
+
+            if (intersects.length > 0) {
+                hitPoint = intersects[0].point;
+                showHitmarker();
+                
+                // Determine headshot vs body shot based on height of impact
+                let damage = 25;
+                if (hitPoint.y > 2.0) { damage = 50; } // Headshot bonus
+                
+                conn.send({ type: 'hit', amount: damage });
             } else {
-                log(`ENEMY fires their ${data.wepName} and misses!`, "log-e");
+                // If miss, draw tracer into the distance
+                hitPoint = new THREE.Vector3();
+                shootRaycaster.ray.at(50, hitPoint);
+            }
+
+            // Draw Tracer locally
+            createBulletTracer(camera.position, hitPoint.x, hitPoint.y, hitPoint.z);
+            
+            // Tell enemy we shot so they see tracer
+            conn.send({ type: 'shoot', targetX: hitPoint.x, targetY: hitPoint.y, targetZ: hitPoint.z });
+        }
+
+        function createBulletTracer(start, tx, ty, tz) {
+            const material = new THREE.LineBasicMaterial({ color: 0xffff00 });
+            const points = [];
+            points.push(new THREE.Vector3(start.x, start.y - 0.2, start.z)); // Slightly below camera
+            points.push(new THREE.Vector3(tx, ty, tz));
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+            
+            // Remove tracer after split second
+            setTimeout(() => scene.remove(line), 50);
+        }
+
+        function showHitmarker() {
+            const marker = document.getElementById('hitmarker');
+            marker.style.display = 'block';
+            setTimeout(() => marker.style.display = 'none', 100);
+        }
+
+        function takeDamage(amount) {
+            if(isDead) return;
+            
+            myHp -= amount;
+            
+            // Update UI
+            const bar = document.getElementById('health-bar');
+            bar.style.width = Math.max(0, (myHp / maxHp) * 100) + "%";
+            document.getElementById('health-text').innerText = `${Math.max(0, myHp)} / ${maxHp}`;
+            
+            // Color changing health bar
+            if(myHp <= 30) bar.style.background = "#ff0000";
+            else bar.style.background = "#0f0";
+
+            // Screen flash red
+            document.getElementById('hud').style.backgroundColor = "rgba(255, 0, 0, 0.3)";
+            setTimeout(() => document.getElementById('hud').style.backgroundColor = "transparent", 100);
+
+            if (myHp <= 0) {
+                die();
             }
         }
 
-        // Now it's our turn
-        isMyTurn = true;
-        updateHUD();
-    }
-</script>
+        function die() {
+            isDead = true;
+            enemyKills++;
+            updateScoreboard();
+            announce("YOU DIED", 2000);
+            
+            // Tell enemy we died
+            conn.send({ type: 'death' });
+            
+            // Fall over animation
+            camera.position.y = 0.5;
+            camera.rotation.z = Math.PI / 4;
+
+            setTimeout(respawn, 3000);
+        }
+
+        function respawn() {
+            myHp = maxHp;
+            isDead = false;
+            
+            // Reset UI
+            document.getElementById('health-bar').style.width = "100%";
+            document.getElementById('health-bar').style.background = "#0f0";
+            document.getElementById('health-text').innerText = "100 / 100";
+            
+            // Random spawn point away from center
+            const spawnX = (Math.random() > 0.5 ? 1 : -1) * (20 + Math.random() * 20);
+            const spawnZ = (Math.random() > 0.5 ? 1 : -1) * (20 + Math.random() * 20);
+            
+            camera.position.set(spawnX, 2, spawnZ);
+            camera.rotation.set(0, 0, 0);
+            velocity.set(0,0,0);
+        }
+
+        /* =====================================================================
+           PART 7: UI & UTILITIES
+           ===================================================================== */
+        function startMatch() {
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            document.body.requestPointerLock();
+            
+            // Set initial position
+            respawn();
+            
+            // Start game loop
+            prevTime = performance.now();
+            animate();
+        }
+
+        function updateScoreboard() {
+            document.getElementById('score-you').innerText = myKills;
+            document.getElementById('score-enemy').innerText = enemyKills;
+        }
+
+        function announce(text, duration = 2000) {
+            const ann = document.getElementById('announcer');
+            ann.innerText = text;
+            ann.style.display = 'block';
+            setTimeout(() => ann.style.display = 'none', duration);
+        }
+
+        function playSound(type) {
+            // Placeholder for actual audio implementation
+            // You can add HTML5 Audio here later!
+        }
+
+        /* =====================================================================
+           PART 8: THE MAIN GAME LOOP (PHYSICS & RENDERING)
+           ===================================================================== */
+        let prevTime = performance.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
+
+            if (document.pointerLockElement === document.body && !isDead) {
+                
+                // --- PHYSICS & COLLISION ---
+                // Add Friction
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+                velocity.y -= 9.8 * 10.0 * delta; // Gravity
+
+                direction.z = Number(keys.w) - Number(keys.s);
+                direction.x = Number(keys.d) - Number(keys.a);
+                direction.normalize(); // Ensure diagonal movement isn't faster
+
+                if (keys.w || keys.s) velocity.z -= direction.z * speedMultiplier * delta;
+                if (keys.a || keys.d) velocity.x -= direction.x * speedMultiplier * delta;
+
+                // Wall Collision Detection (Very Basic Forward Raycast)
+                let moveDir = new THREE.Vector3(velocity.x, 0, velocity.z).normalize();
+                forwardRaycaster.set(camera.position, moveDir);
+                // Rotate raycaster based on camera view
+                let camDir = new THREE.Vector3();
+                camera.getWorldDirection(camDir);
+                camDir.y = 0; camDir.normalize();
+                
+                // Floor Collision Detection
+                downRaycaster.ray.origin.copy(camera.position);
+                const floorIntersects = downRaycaster.intersectObject(floor);
+                onObject = floorIntersects.length > 0;
+
+                if (onObject) {
+                    velocity.y = Math.max(0, velocity.y);
+                    // Jump Logic
+                    if (keys.space) {
+                        velocity.y = 40.0;
+                    }
+                }
+
+                // Apply velocities to camera position
+                camera.translateX(-velocity.x * delta);
+                camera.position.y += velocity.y * delta;
+                camera.translateZ(velocity.z * delta);
+
+                // Prevent falling through map completely
+                if (camera.position.y < 2) {
+                    camera.position.y = 2;
+                    velocity.y = 0;
+                }
+
+                // --- NETWORKING SYNC ---
+                if (conn && conn.open) {
+                    conn.send({
+                        type: 'move',
+                        x: camera.position.x,
+                        y: camera.position.y - 1, // Offset so enemy model is on ground
+                        z: camera.position.z,
+                        ry: camera.rotation.y
+                    });
+                }
+            }
+
+            renderer.render(scene, camera);
+            prevTime = time;
+        }
+
+        // Handle Window Resize properly
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
 </body>
 </html>
